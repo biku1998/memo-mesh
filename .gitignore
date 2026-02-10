@@ -65,7 +65,6 @@ apps/mcp/.config.local.json
 
 dev-plans/.env
 .env.local
-pnpm-lock.yaml
 /node_modules
 /dist
 /apps/**/dist
