@@ -63,4 +63,9 @@ postgres-data/
 # Optional: MCP local config
 apps/mcp/.config.local.json
 
-dev-plans/
+dev-plans/.env
+.env.local
+/node_modules
+/dist
+/apps/**/dist
+/packages/**/dist

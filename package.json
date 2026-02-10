@@ -1,0 +1,36 @@
+{
+  "name": "memo-mesh",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hostable memory layer for LLM agents (monorepo).",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "build": "pnpm --recursive build",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt . --check",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d postgres",
+    "db:down": "docker compose -f docker-compose.dev.yml down",
+    "db:migrate": "pnpm --filter packages/db migrate",
+    "db:studio": "pnpm --filter packages/db studio"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.1",
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "oxfmt": "^0.30.0",
+    "oxlint": "^1.45.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
