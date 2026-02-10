@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment variables (keep .env.example)
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker (ignore volumes, keep compose files)
+*.dockerignore
+docker-volumes/
+postgres-data/
+
+# Prisma
+# Note: Prisma client is generated and typically not ignored
+# but migrations are committed
+*.db
+*.db-journal
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.turbo/
+
+# Debug
+.vscode/
+.history/
+
+# Optional: MCP local config
+apps/mcp/.config.local.json
+
+dev-plans/
