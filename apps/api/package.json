@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@memo-mesh/db": "workspace:*",
+    "@memo-mesh/llm": "workspace:*",
     "@memo-mesh/shared": "workspace:*",
     "fastify": "^5.7.4"
   }

@@ -20,3 +20,8 @@ if (process.env.NODE_ENV !== "production") {
 
 export { PrismaClient };
 export type * from "./generated/prisma/client.js";
+export {
+  storeMemoryEmbedding,
+  searchMemoriesByVector,
+} from "./embeddings.js";
+export type { VectorSearchResult } from "./embeddings.js";

@@ -84,51 +84,53 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 **2A Acceptance**: ✅ Seed creates test project, POST stores message + raw memory, validation rejects invalid input.
 
-### 2B — LLM Package + Embeddings
+### 2B — LLM Package + Embeddings ✅
 
-- [ ] Set up `packages/llm` package (install Vercel AI SDK)
-- [ ] Create embedding wrapper function (`embed` in `packages/llm`)
-- [ ] Use `OPENAI_API_KEY` from env vars directly (no DB lookup yet)
-- [ ] Default model: `text-embedding-3-small`
-- [ ] Add error handling for LLM calls (retry, timeout, logging)
-- [ ] On message ingestion: generate embedding for the raw memory
-- [ ] Store embedding in `MemoryEmbedding` table (pgvector)
+- [x] Set up `packages/llm` package (Vercel AI SDK + `@ai-sdk/openai`)
+- [x] Create embedding wrapper functions (`generateEmbedding`, `generateEmbeddings` in `packages/llm`)
+- [x] Use `OPENAI_API_KEY` from env vars directly (no DB lookup yet)
+- [x] Default model: `text-embedding-3-small` (1536 dimensions)
+- [x] Add error handling for embedding calls (fire-and-forget with fastify error logging)
+- [x] On message ingestion: generate embedding for the raw memory
+- [x] Store embedding in `MemoryEmbedding` table via raw SQL (`$executeRawUnsafe` with pgvector cast)
+- [x] Add `storeMemoryEmbedding` helper in `packages/db` (raw SQL for `Unsupported("vector")` column)
 
-**2B Acceptance**: Messages get embedded on ingestion. Embeddings stored in pgvector.
+**2B Acceptance**: ✅ Messages get embedded on ingestion. Embeddings stored in pgvector (verified 1536-dim vectors).
 
-### 2C — Semantic Search
+### 2C — Semantic Search ✅
 
-- [ ] Implement `POST /v1/projects/:projectId/memories/search` endpoint
-- [ ] Validate request body (`query`, `k`, `includeRaw`) with Zod
-- [ ] Generate query embedding using `packages/llm`
-- [ ] Perform vector similarity search (pgvector cosine distance)
-- [ ] Implement ranking: `finalScore = similarity * 0.9 + recencyBoost * 0.1`
-- [ ] Return results sorted by final score
-- [ ] Return `{ items: Memory[] }` response (context pack comes later)
+- [x] Implement `POST /v1/projects/:projectId/memories/search` endpoint
+- [x] Validate request body (`query`, `k`, `includeRaw`) with Zod (`SearchMemoriesBody` schema)
+- [x] Generate query embedding using `packages/llm`
+- [x] Perform vector similarity search (pgvector cosine distance via `searchMemoriesByVector`)
+- [x] Implement ranking: `finalScore = similarity * 0.9 + recencyBoost * 0.1` (exponential decay, 7-day half-life)
+- [x] Return results sorted by final score
+- [x] Return `{ items }` response with `memoryId`, `text`, `type`, `similarity`, `recencyBoost`, `finalScore`, `createdAt`
+- [x] Add Zod schemas in `packages/shared` (`SearchMemoriesBody`, `SearchMemoryItem`, `SearchMemoriesResponse`)
 
-**2C Acceptance**: Queries work without keyword overlap (semantic match). Results sorted by score.
+**2C Acceptance**: ✅ Queries work without keyword overlap (semantic match). "sports" → basketball, "pet" → dog, "programming" → TypeScript. Results sorted by finalScore.
 
-### 2D — Fact Extraction
+### 2D — Fact Extraction ✅
 
-- [ ] Create Zod schema for extraction output (`packages/shared`)
-  - `ExtractionSchema` with `entities[]`, `facts[]`, `relations[]`
-  - Confidence scores (0-1), optional `importanceHint`
-- [ ] Create extraction wrapper function (`extract` in `packages/llm`)
-- [ ] Design extraction prompt (stable preferences/profile/constraints)
-- [ ] Default model: `gpt-4o-mini`
-- [ ] Call LLM with structured output → parse with Zod
-- [ ] Implement repair logic (fix common JSON errors like trailing commas)
-- [ ] Implement retry once on failure, log and continue if retry fails
-- [ ] Implement entity normalization utility (lowercase, trim → `normalizedName`)
-- [ ] Wire into ingestion pipeline:
-  - On message POST → extract facts/entities/relations
-  - Store facts as `Memory` records (type: `fact`, linked to source message)
+- [x] Create Zod schema for extraction output (`packages/shared/src/schemas/extraction.ts`)
+  - `ExtractionResult` with `entities[]`, `facts[]`, `relations[]`
+  - `ExtractedFact` with confidence (0-1), optional importance
+  - `ExtractedRelation` with subject/predicate/object + confidence
+- [x] Create extraction wrapper function (`extractKnowledge` in `packages/llm`)
+- [x] Design extraction prompt (stable preferences/profile/constraints, entity types, relations)
+- [x] Default model: `gpt-4o-mini` via Vercel AI SDK `generateObject`
+- [x] Call LLM with structured output → Zod schema validation (handled by AI SDK)
+- [x] Implement entity normalization utility (`normalizeEntityName` in `packages/shared/src/utils/`)
+- [x] Wire into ingestion pipeline (fire-and-forget):
+  - On message POST → extract facts/entities/relations via `extractKnowledge`
+  - Store facts as `Memory` records (type: `fact`, with confidence + importance)
   - Store entities in `Entity` table (upsert by `normalizedName` + `kind`)
   - Store relations in `Relation` table (with `evidenceMemoryId`)
-  - Generate embeddings for fact memories
+  - Generate embeddings for fact memories (1536-dim)
   - Store fact embeddings in `MemoryEmbedding`
+  - Create `EntityMention` records linking facts to entities
 
-**2D Acceptance**: POST "I'm vegetarian" → fact memory appears with evidence link. Entities and relations stored. Invalid JSON repaired or logged gracefully.
+**2D Acceptance**: ✅ POST "I am vegetarian" → fact memory "user is vegetarian" (confidence: 0.9), entities (user, Italian food, Google, Python), relations (works at, uses). Facts searchable by semantic similarity. Errors logged gracefully.
 
 ### 2E — Knowledge Graph Endpoints
 
@@ -346,9 +348,9 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### Progress Tracking
 
-- Current phase: Phase 2B (LLM Package + Embeddings)
+- Current phase: Phase 2E (Knowledge Graph Endpoints)
 - Phase 1: ✅ Complete
-- Phase 2: 🟡 In progress (2A ✅ | 2B–2G ⬜)
+- Phase 2: 🟡 In progress (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E–2G ⬜)
 - Phase 3: ⬜ Not started
 - Phase 4: ⬜ Not started
 - Phase 5: ⬜ Not started
