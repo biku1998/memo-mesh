@@ -15,8 +15,9 @@
     "test:coverage": "vitest --coverage",
     "db:up": "docker compose -f docker-compose.dev.yml up -d postgres",
     "db:down": "docker compose -f docker-compose.dev.yml down",
-    "db:migrate": "pnpm --filter packages/db migrate",
-    "db:studio": "pnpm --filter packages/db studio"
+    "db:migrate": "pnpm --filter @memo-mesh/db migrate",
+    "db:studio": "pnpm --filter @memo-mesh/db studio",
+    "db:seed": "pnpm --filter @memo-mesh/db seed"
   },
   "engines": {
     "node": ">=22.19.0"
