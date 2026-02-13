@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { prisma, searchMemoriesByVector } from "@memo-mesh/db";
 import { generateEmbedding } from "@memo-mesh/llm";
-import { SearchMemoriesBody } from "@memo-mesh/shared";
+import { ProjectParams, SearchMemoriesBody } from "@memo-mesh/shared";
 
 /**
  * Compute a recency boost between 0 and 1.
@@ -16,7 +16,16 @@ function recencyBoost(createdAt: Date): number {
 
 export const searchRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post("/memories/search", async (request, reply) => {
-    const { projectId } = request.params as { projectId: string };
+    // Validate params
+    const parsedParams = ProjectParams.safeParse(request.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: "Validation failed",
+        details: parsedParams.error.flatten().fieldErrors,
+      });
+    }
+
+    const { projectId } = parsedParams.data;
 
     const parsed = SearchMemoriesBody.safeParse(request.body);
     if (!parsed.success) {
@@ -34,7 +43,9 @@ export const searchRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     if (!project) {
-      return reply.status(404).send({ error: "Project not found" });
+      return reply
+        .status(404)
+        .send({ error: "Project not found", details: null });
     }
 
     // Generate query embedding

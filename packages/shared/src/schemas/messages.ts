@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export const ProjectParams = z.object({
+  projectId: z.string().min(1, "projectId is required"),
+});
+
+export type ProjectParams = z.infer<typeof ProjectParams>;
+
 export const MessageRole = z.enum(["user", "assistant", "system"]);
 
 export const CreateMessageBody = z.object({

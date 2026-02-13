@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { prisma, storeMemoryEmbedding } from "@memo-mesh/db";
 import { generateEmbedding, extractKnowledge } from "@memo-mesh/llm";
 import {
+  ProjectParams,
   CreateMessageBody,
   normalizeEntityName,
   type ExtractionResult,
@@ -102,7 +103,16 @@ async function processExtraction(
 
 export const messageRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post("/messages", async (request, reply) => {
-    const { projectId } = request.params as { projectId: string };
+    // Validate params
+    const parsedParams = ProjectParams.safeParse(request.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: "Validation failed",
+        details: parsedParams.error.flatten().fieldErrors,
+      });
+    }
+
+    const { projectId } = parsedParams.data;
 
     // Validate body
     const parsed = CreateMessageBody.safeParse(request.body);
@@ -121,26 +131,27 @@ export const messageRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     if (!project) {
-      return reply.status(404).send({ error: "Project not found" });
+      return reply
+        .status(404)
+        .send({ error: "Project not found", details: null });
     }
 
-    // Store message
-    const message = await prisma.message.create({
-      data: {
-        projectId,
-        role,
-        content,
-      },
-    });
+    // Store message + raw memory atomically
+    const { message, memory } = await prisma.$transaction(async (tx) => {
+      const msg = await tx.message.create({
+        data: { projectId, role, content },
+      });
 
-    // Create raw memory linked to the message
-    const memory = await prisma.memory.create({
-      data: {
-        projectId,
-        type: "raw",
-        text: content,
-        sourceMessageId: message.id,
-      },
+      const mem = await tx.memory.create({
+        data: {
+          projectId,
+          type: "raw",
+          text: content,
+          sourceMessageId: msg.id,
+        },
+      });
+
+      return { message: msg, memory: mem };
     });
 
     // Generate and store embedding for raw memory (fire-and-forget)
