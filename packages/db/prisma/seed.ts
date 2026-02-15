@@ -1,5 +1,13 @@
-import "dotenv/config";
+import { config } from "dotenv";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
+
+// Resolve .env.local from the monorepo root (3 levels up from packages/db/prisma/)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(__dirname, "..", "..", "..");
+config({ path: resolve(repoRoot, ".env.local") });
+
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 
