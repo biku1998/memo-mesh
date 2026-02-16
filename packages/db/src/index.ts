@@ -23,5 +23,7 @@ export type * from "./generated/prisma/client.js";
 export {
   storeMemoryEmbedding,
   searchMemoriesByVector,
+  findSimilarActiveFacts,
+  supersedeMemory,
 } from "./embeddings.js";
 export type { VectorSearchResult } from "./embeddings.js";

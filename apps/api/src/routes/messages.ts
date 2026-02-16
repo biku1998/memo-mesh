@@ -1,5 +1,10 @@
 import type { FastifyPluginAsync } from "fastify";
-import { prisma, storeMemoryEmbedding } from "@memo-mesh/db";
+import {
+  prisma,
+  storeMemoryEmbedding,
+  findSimilarActiveFacts,
+  supersedeMemory,
+} from "@memo-mesh/db";
 import { generateEmbedding, extractKnowledge } from "@memo-mesh/llm";
 import {
   ProjectParams,
@@ -39,7 +44,9 @@ async function processExtraction(
     entityMap.set(normalized, upserted.id);
   }
 
-  // 2. Store facts as Memory records + embed + link entity mentions
+  // 2. Store facts as Memory records + embed + consolidate + link entity mentions
+  const CONSOLIDATION_THRESHOLD = 0.70;
+
   for (const fact of extraction.facts) {
     const factMemory = await prisma.memory.create({
       data: {
@@ -52,12 +59,25 @@ async function processExtraction(
       },
     });
 
-    // Embed the fact (fire-and-forget)
-    generateEmbedding(fact.text)
-      .then((embedding) => storeMemoryEmbedding(factMemory.id, embedding))
-      .catch((err) => {
-        log.error({ err, memoryId: factMemory.id }, "Failed to embed fact");
+    // Embed the fact (awaited — needed for consolidation)
+    try {
+      const embedding = await generateEmbedding(fact.text);
+      await storeMemoryEmbedding(factMemory.id, embedding);
+
+      // Consolidation: find similar active facts and supersede them
+      const similar = await findSimilarActiveFacts({
+        projectId,
+        embedding,
+        threshold: CONSOLIDATION_THRESHOLD,
+        excludeMemoryId: factMemory.id,
       });
+
+      for (const match of similar) {
+        await supersedeMemory(match.memoryId);
+      }
+    } catch (err) {
+      log.error({ err, memoryId: factMemory.id }, "Failed to embed/consolidate fact");
+    }
 
     // Create entity mentions for this fact
     for (const entityName of fact.entities) {

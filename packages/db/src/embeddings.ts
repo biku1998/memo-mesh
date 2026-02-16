@@ -64,3 +64,50 @@ export async function searchMemoriesByVector(opts: {
 
   return results;
 }
+
+/**
+ * Find active fact memories in a project that are similar to the given embedding
+ * above a similarity threshold. Used for consolidation (deduplication).
+ */
+export async function findSimilarActiveFacts(opts: {
+  projectId: string;
+  embedding: number[];
+  threshold: number;
+  excludeMemoryId?: string;
+}): Promise<{ memoryId: string; text: string; similarity: number }[]> {
+  const { projectId, embedding, threshold, excludeMemoryId } = opts;
+  const vectorStr = `[${embedding.join(",")}]`;
+
+  const excludeFilter = excludeMemoryId
+    ? `AND m."id" != '${excludeMemoryId}'`
+    : "";
+
+  return prisma.$queryRawUnsafe(
+    `SELECT
+       m."id" AS "memoryId",
+       m."text",
+       1 - (me."embedding" <=> $1::vector) AS "similarity"
+     FROM "MemoryEmbedding" me
+     JOIN "Memory" m ON m."id" = me."memoryId"
+     WHERE m."projectId" = $2
+       AND m."status" = 'active'
+       AND m."type" = 'fact'
+       ${excludeFilter}
+       AND 1 - (me."embedding" <=> $1::vector) > $3
+     ORDER BY me."embedding" <=> $1::vector
+     LIMIT 5`,
+    vectorStr,
+    projectId,
+    threshold,
+  );
+}
+
+/**
+ * Mark a memory as superseded (used during consolidation).
+ */
+export async function supersedeMemory(memoryId: string): Promise<void> {
+  await prisma.memory.update({
+    where: { id: memoryId },
+    data: { status: "superseded" },
+  });
+}

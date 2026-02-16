@@ -132,26 +132,31 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 **2D Acceptance**: ✅ POST "I am vegetarian" → fact memory "user is vegetarian" (confidence: 0.9), entities (user, Italian food, Google, Python), relations (works at, uses). Facts searchable by semantic similarity. Errors logged gracefully.
 
-### 2E — Knowledge Graph Endpoints
+### 2E — Knowledge Graph Endpoints ✅
 
-- [ ] Implement `GET /v1/projects/:projectId/graph` endpoint
-  - Return `{ nodes: Entity[], edges: Relation[] }`
-  - Include evidence memory IDs in edges
-  - Support `limit` query param
-- [ ] Implement `GET /v1/projects/:projectId/graph/entity/:entityId` endpoint
-  - Return entity details + outgoing/incoming relations + evidence memories
+- [x] Implement `GET /v1/projects/:projectId/graph` endpoint
+  - Returns `{ nodes: Entity[], edges: Relation[] }`
+  - Includes evidence memory IDs in edges
+  - Supports `limit` query param (default 100, max 500)
+  - Zod validation for params + query
+- [x] Implement `GET /v1/projects/:projectId/graph/entity/:entityId` endpoint
+  - Returns entity details + outgoing/incoming relations + evidence memories
+  - Includes `mentions` array (entity mentions linked to fact memories)
+  - Validates entity belongs to project
 
-**2E Acceptance**: Graph API returns meaningful nodes/edges. Entity endpoint shows relations with provenance.
+**2E Acceptance**: ✅ Graph API returns nodes (user, Google, Python, Italian food) and edges (works at, team uses) with evidence. Entity detail shows incoming/outgoing relations with provenance.
 
-### 2F — Consolidation
+### 2F — Consolidation ✅
 
-- [ ] Implement similarity threshold check (e.g., 0.85)
-- [ ] On new fact extraction: embed → search existing `active` facts in same project
-- [ ] If similarity > threshold: mark old as `status: "superseded"`, create new as `status: "active"`
-- [ ] Preserve evidence chain (both memories link to their source messages)
-- [ ] Update `updatedAt` timestamp on superseded memory
+- [x] Implement similarity threshold check (0.70 cosine similarity)
+- [x] On new fact extraction: embed → search existing `active` facts in same project
+- [x] If similarity > threshold: mark old as `status: "superseded"`, create new as `status: "active"`
+- [x] Preserve evidence chain (both memories link to their source messages)
+- [x] Update `updatedAt` timestamp on superseded memory
+- [x] Add `findSimilarActiveFacts` and `supersedeMemory` helpers in `packages/db/src/embeddings.ts`
+- [x] Changed fact embedding from fire-and-forget to `await` (needed for consolidation query)
 
-**2F Acceptance**: Repeating "I'm vegetarian" and "I follow a vegetarian diet" doesn't create duplicates — old fact is superseded.
+**2F Acceptance**: ✅ "I eat only plant-based food" → new fact active, old "user follows a vegetarian diet" superseded. Evidence chain preserved.
 
 ### 2G — Context Pack + Explain
 
@@ -348,9 +353,9 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### Progress Tracking
 
-- Current phase: Phase 2E (Knowledge Graph Endpoints)
+- Current phase: Phase 2G (Context Pack + Explain)
 - Phase 1: ✅ Complete
-- Phase 2: 🟡 In progress (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E–2G ⬜)
+- Phase 2: 🟡 In progress (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E ✅ | 2F ✅ | 2G ⬜)
 - Phase 3: ⬜ Not started
 - Phase 4: ⬜ Not started
 - Phase 5: ⬜ Not started

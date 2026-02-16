@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { messageRoutes } from "./routes/messages.js";
 import { searchRoutes } from "./routes/search.js";
+import { graphRoutes } from "./routes/graph.js";
 
 const fastify = Fastify({
   logger: true,
@@ -12,6 +13,7 @@ fastify.get("/health", () => {
 
 fastify.register(messageRoutes, { prefix: "/v1/projects/:projectId" });
 fastify.register(searchRoutes, { prefix: "/v1/projects/:projectId" });
+fastify.register(graphRoutes, { prefix: "/v1/projects/:projectId" });
 
 // Parse and validate PORT environment variable
 const portEnv = process.env.PORT;
