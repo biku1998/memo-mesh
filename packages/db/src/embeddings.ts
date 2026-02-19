@@ -1,0 +1,185 @@
+import { prisma } from "./index.js";
+
+/**
+ * Store an embedding vector for a memory using raw SQL (pgvector).
+ * Prisma's `Unsupported("vector")` type can't be written via the ORM,
+ * so we use $executeRawUnsafe with parameterized queries.
+ */
+export async function storeMemoryEmbedding(
+  memoryId: string,
+  embedding: number[],
+): Promise<void> {
+  if (!Array.isArray(embedding) || embedding.length === 0) {
+    throw new Error(
+      `storeMemoryEmbedding: embedding must be a non-empty array (memoryId=${memoryId})`,
+    );
+  }
+  if (!embedding.every(Number.isFinite)) {
+    throw new Error(
+      `storeMemoryEmbedding: embedding contains non-finite values (memoryId=${memoryId})`,
+    );
+  }
+  const vectorStr = `[${embedding.join(",")}]`;
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "MemoryEmbedding" ("memoryId", "embedding")
+     VALUES ($1, $2::vector)
+     ON CONFLICT ("memoryId") DO UPDATE SET "embedding" = $2::vector`,
+    memoryId,
+    vectorStr,
+  );
+}
+
+export interface VectorSearchResult {
+  memoryId: string;
+  text: string;
+  type: string;
+  similarity: number;
+  createdAt: Date;
+}
+
+/**
+ * Search memories by vector similarity using pgvector cosine distance.
+ * Filters by projectId and optionally by memory type.
+ * Returns top-k results ordered by cosine similarity (highest first).
+ */
+export async function searchMemoriesByVector(opts: {
+  projectId: string;
+  queryEmbedding: number[];
+  k: number;
+  includeRaw: boolean;
+}): Promise<VectorSearchResult[]> {
+  const { projectId, queryEmbedding, k, includeRaw } = opts;
+  const vectorStr = `[${queryEmbedding.join(",")}]`;
+
+  const typeFilter = includeRaw ? "" : `AND m."type" != 'raw'`;
+
+  const results = await prisma.$queryRawUnsafe<VectorSearchResult[]>(
+    `SELECT
+       m."id" AS "memoryId",
+       m."text",
+       m."type",
+       1 - (me."embedding" <=> $1::vector) AS "similarity",
+       m."createdAt"
+     FROM "MemoryEmbedding" me
+     JOIN "Memory" m ON m."id" = me."memoryId"
+     WHERE m."projectId" = $2
+       AND m."status" = 'active'
+       ${typeFilter}
+     ORDER BY me."embedding" <=> $1::vector
+     LIMIT $3`,
+    vectorStr,
+    projectId,
+    k,
+  );
+
+  return results;
+}
+
+/**
+ * Find active fact memories in a project that are similar to the given embedding
+ * above a similarity threshold. Used for consolidation (deduplication).
+ */
+export async function findSimilarActiveFacts(opts: {
+  projectId: string;
+  embedding: number[];
+  threshold: number;
+  excludeMemoryId?: string;
+}): Promise<{ memoryId: string; text: string; similarity: number }[]> {
+  const { projectId, embedding, threshold, excludeMemoryId } = opts;
+  const vectorStr = `[${embedding.join(",")}]`;
+
+  // Use a parameterized placeholder for excludeMemoryId to avoid SQL injection.
+  // When present it becomes $4; when absent the clause is omitted entirely.
+  if (excludeMemoryId) {
+    return prisma.$queryRawUnsafe(
+      `SELECT
+         m."id" AS "memoryId",
+         m."text",
+         1 - (me."embedding" <=> $1::vector) AS "similarity"
+       FROM "MemoryEmbedding" me
+       JOIN "Memory" m ON m."id" = me."memoryId"
+       WHERE m."projectId" = $2
+         AND m."status" = 'active'
+         AND m."type" = 'fact'
+         AND m."id" != $4
+         AND 1 - (me."embedding" <=> $1::vector) > $3
+       ORDER BY me."embedding" <=> $1::vector
+       LIMIT 5`,
+      vectorStr,
+      projectId,
+      threshold,
+      excludeMemoryId,
+    );
+  }
+
+  return prisma.$queryRawUnsafe(
+    `SELECT
+       m."id" AS "memoryId",
+       m."text",
+       1 - (me."embedding" <=> $1::vector) AS "similarity"
+     FROM "MemoryEmbedding" me
+     JOIN "Memory" m ON m."id" = me."memoryId"
+     WHERE m."projectId" = $2
+       AND m."status" = 'active'
+       AND m."type" = 'fact'
+       AND 1 - (me."embedding" <=> $1::vector) > $3
+     ORDER BY me."embedding" <=> $1::vector
+     LIMIT 5`,
+    vectorStr,
+    projectId,
+    threshold,
+  );
+}
+
+export interface SimilarMemoryResult {
+  memoryId: string;
+  text: string;
+  type: string;
+  status: string;
+  similarity: number;
+}
+
+/**
+ * Find memories similar to a given memory (by its stored embedding).
+ * Searches across ALL statuses (active + superseded) — used in explain endpoint.
+ * Uses a subquery to retrieve the stored embedding without a round-trip.
+ */
+export async function findSimilarMemoriesByMemoryId(opts: {
+  memoryId: string;
+  projectId: string;
+  k: number;
+}): Promise<SimilarMemoryResult[]> {
+  const { memoryId, projectId, k } = opts;
+
+  return prisma.$queryRawUnsafe<SimilarMemoryResult[]>(
+    `SELECT
+       m."id" AS "memoryId",
+       m."text",
+       m."type",
+       m."status",
+       1 - (me."embedding" <=> (
+         SELECT "embedding" FROM "MemoryEmbedding" WHERE "memoryId" = $1
+       )) AS "similarity"
+     FROM "MemoryEmbedding" me
+     JOIN "Memory" m ON m."id" = me."memoryId"
+     WHERE m."projectId" = $2
+       AND m."id" != $1
+     ORDER BY me."embedding" <=> (
+       SELECT "embedding" FROM "MemoryEmbedding" WHERE "memoryId" = $1
+     )
+     LIMIT $3`,
+    memoryId,
+    projectId,
+    k,
+  );
+}
+
+/**
+ * Mark a memory as superseded (used during consolidation).
+ */
+export async function supersedeMemory(memoryId: string): Promise<void> {
+  await prisma.memory.update({
+    where: { id: memoryId },
+    data: { status: "superseded" },
+  });
+}

@@ -7,37 +7,40 @@
 [![pnpm](https://img.shields.io/badge/pnpm-10.28-orange.svg)](https://pnpm.io/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 🎯 Motivation
+## Motivation
 
-Modern LLM agents often struggle with **persistent memory**—they forget user preferences, constraints, and context between sessions. Memo Mesh solves this by providing:
+Modern LLM agents often struggle with **persistent memory** — they forget user preferences, constraints, and context between sessions. Memo Mesh solves this by providing:
 
 - **Evidence-first memory**: Every extracted fact links back to its source message, ensuring full auditability
 - **Semantic search**: Find relevant memories using vector similarity, not just keyword matching
-- **Knowledge graph**: Visualize relationships between entities, preferences, and constraints
+- **Knowledge graph**: Relationships between entities, preferences, and constraints
+- **Consolidation**: Duplicate or updated facts are automatically superseded rather than duplicated
+- **Context packs**: Search results are structured so an LLM agent can consume them directly
 - **Self-hostable**: Deploy on your own infrastructure with full control over data and costs
-- **MCP integration**: Standard Model Context Protocol support for seamless agent integration
+- **MCP integration**: Standard Model Context Protocol support for seamless agent integration (coming in Phase 5)
 
-Think of it as a self-hostable alternative to Supermemory or Mem0, designed for developers who want control, transparency, and evidence-based memory systems.
+Designed for developers who want control, transparency, and evidence-based memory systems.
 
-## ✨ Features
+## Features
 
-- 🔍 **Semantic Memory Search** - Vector-based retrieval with similarity ranking
-- 📊 **Knowledge Graph** - Visualize entities, relations, and their provenance
-- 🔐 **Evidence-First Design** - Every memory traces back to source messages
-- 🔒 **Self-Hostable** - Deploy on your VPS with Docker Compose
-- 🛠️ **MCP Support** - Standard Model Context Protocol integration
-- 🎨 **Read-Only Dashboard** - Explore memories and graph relationships
-- 🔑 **BYOK (Bring Your Own Keys)** - Use your own OpenAI/Anthropic API keys
-- 📦 **Structured Extraction** - LLM-powered fact extraction with Zod validation
+- **Semantic Memory Search** — Vector-based retrieval with similarity + recency ranking; returns a structured `contextPack` ready for agent consumption
+- **Structured Fact Extraction** — LLM-powered extraction with Zod validation (`gpt-4o-mini`)
+- **Knowledge Graph** — Entities, relations, and their source evidence
+- **Automatic Consolidation** — Similar facts are deduplicated; superseded memories stay linked for traceability
+- **Explain Endpoint** — Full provenance per memory: source message, entity mentions, consolidation history
+- **Evidence-First Design** — Every memory traces back to its originating message
+- **Self-Hostable** — Deploy with Docker Compose; bring your own OpenAI key
+- **Dashboard** — Prisma Studio available locally; full dashboard UI planned in Phase 4
+- **MCP Support** — Planned in Phase 5
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 22.19.0+ (use [nvm](https://github.com/nvm-sh/nvm) with `.nvmrc`)
 - pnpm 10.28+
 - Docker & Docker Compose
-- PostgreSQL 16+ (via Docker)
+- An OpenAI API key (for embeddings + extraction)
 
 ### Installation
 
@@ -50,69 +53,108 @@ cd memo-mesh
 pnpm install
 
 # Set up environment variables
-cp .env.example .env
-# Edit .env with your DATABASE_URL if needed
+cp .env.example .env.local
+# Edit .env.local — fill in OPENAI_API_KEY (DATABASE_URL is pre-filled for Docker)
 
-# Start PostgreSQL
+# Start PostgreSQL (with pgvector)
 pnpm db:up
 
 # Run migrations
 pnpm db:migrate
 
-# Start development servers
+# Seed test data (creates a test project)
+pnpm db:seed
+
+# Build workspace packages, then start the API server
 pnpm dev
 ```
 
-The API will be available at `http://localhost:3000`. Test the health endpoint:
+The API will be available at `http://localhost:3000`.
 
 ```bash
 curl http://localhost:3000/health
 # {"status":"ok"}
 ```
 
-## 📊 Current Progress
+> **Tip**: Run `pnpm db:studio` to browse your data visually in Prisma Studio at `http://localhost:5555`.
 
-### ✅ Stage 1: Repo + DB Foundation (Complete)
+### Try It Out
 
-- [x] pnpm monorepo setup with workspace configuration
-- [x] Prisma schema with all core models (User, Project, Message, Memory, Entity, Relation)
-- [x] PostgreSQL + pgvector setup with Docker Compose
-- [x] Fastify API server with health check endpoint
-- [x] Structured logging and TypeScript configuration
+```bash
+# Use the project ID printed by the seed script
+PROJECT_ID="<your-project-id>"
 
-### 🚧 Stage 2: Auth + Projects + API Keys (In Progress)
+# 1. Ingest messages — triggers background extraction + embedding
+curl -X POST "http://localhost:3000/v1/projects/${PROJECT_ID}/messages" \
+  -H "Content-Type: application/json" \
+  -d '{"role": "user", "content": "I am vegetarian and I love cooking Italian food"}'
 
-- [ ] User registration/login with session-based auth
-- [ ] Project management with auto-generated API keys
-- [ ] Provider key encryption (BYOK support)
-- [ ] Authentication middleware (session + API key)
+curl -X POST "http://localhost:3000/v1/projects/${PROJECT_ID}/messages" \
+  -H "Content-Type: application/json" \
+  -d '{"role": "user", "content": "I follow a plant-based diet"}'
 
-### 📋 Upcoming Stages
+# Wait ~5 seconds for background LLM processing, then search
+# Returns items + a contextPack ready to inject into an LLM prompt
+curl -X POST "http://localhost:3000/v1/projects/${PROJECT_ID}/memories/search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "dietary preferences", "k": 5}'
 
-- **Stage 3**: Message ingestion (raw timeline)
-- **Stage 4**: Embeddings + semantic search
-- **Stage 5**: Fact extraction (structured memories)
-- **Stage 6**: Knowledge graph generation
-- **Stage 7**: Consolidation + quality improvements
-- **Stage 8**: MCP server integration
-- **Stage 9**: Testing + OSS polish
+# Explore the knowledge graph
+curl "http://localhost:3000/v1/projects/${PROJECT_ID}/graph"
+
+# Inspect a specific fact — shows source message + consolidation history
+MEMORY_ID="<a-memory-id-from-search>"
+curl "http://localhost:3000/v1/projects/${PROJECT_ID}/memories/${MEMORY_ID}/explain"
+```
+
+The search returns extracted facts like "user is vegetarian" ranked by semantic similarity with a `contextPack` grouping facts by entity — no keyword overlap needed. When you send the plant-based diet message, the similar vegetarian fact is automatically superseded (consolidation).
+
+## Current Progress
+
+**Approach**: Core-first — build the differentiating memory pipeline first (ingest → embed → extract → search → graph → consolidate → context pack), then add standard infrastructure (auth, dashboard, MCP).
+
+### Phase 1: Repo + DB Foundation — Complete ✅
+
+- pnpm monorepo with workspace configuration
+- Prisma 7 schema with all core models (`User`, `Project`, `Message`, `Memory`, `MemoryEmbedding`, `Entity`, `Relation`, `EntityMention`)
+- PostgreSQL 16 + pgvector with Docker Compose
+- Fastify API server with health check
+
+### Phase 2: Core Pipeline — Complete ✅
+
+| Sub-phase | Status | Description |
+|-----------|--------|-------------|
+| 2A | ✅ | Seed script + `POST /messages` endpoint (stores message + raw memory atomically) |
+| 2B | ✅ | Embeddings via `text-embedding-3-small` (1536-dim, pgvector) |
+| 2C | ✅ | Semantic search (cosine similarity + recency ranking) |
+| 2D | ✅ | Fact extraction (`gpt-4o-mini` structured output → entities, facts, relations) |
+| 2E | ✅ | Knowledge graph endpoints (`GET /graph`, `GET /graph/entity/:id`) |
+| 2F | ✅ | Consolidation — similar facts auto-superseded (threshold: 0.70 cosine similarity) |
+| 2G | ✅ | Context pack + explain — search returns grouped `contextPack`; `/explain` shows full provenance |
+
+### Upcoming Phases
+
+- **Phase 3**: Auth + Projects + Provider Keys (session auth, API key middleware, encrypted key storage)
+- **Phase 4**: Dashboard UI (React + TanStack Router + knowledge graph visualization)
+- **Phase 5**: MCP Server (`memory.add`, `memory.search`, `memory.graph` tools)
+- **Phase 6**: Testing + OSS Polish (unit + integration + e2e tests, CI/CD, docs)
 
 See [`dev-plans/plan.md`](./dev-plans/plan.md) for detailed progress tracking.
 
-## 🏗️ Architecture
+## Architecture
 
 ### Monorepo Structure
 
-```
+```text
 memo-mesh/
 ├── apps/
-│   ├── api/          # Fastify HTTP API server
-│   ├── web/          # React dashboard (TanStack Router)
-│   └── mcp/          # MCP server for agent integration
+│   ├── api/           # Fastify HTTP API (all core endpoints)
+│   ├── web/           # React dashboard (Phase 4)
+│   └── mcp/           # MCP server (Phase 5)
 ├── packages/
-│   ├── db/           # Prisma schema + migrations
-│   ├── llm/          # Vercel AI SDK wrappers (embeddings + extraction)
-│   ├── shared/       # Zod schemas, types, utilities
+│   ├── db/            # Prisma schema, migrations, pgvector helpers
+│   ├── llm/           # Vercel AI SDK wrappers (embeddings + extraction)
+│   ├── shared/        # Zod schemas, types, utilities
 │   └── shared-config/ # Shared TSConfig, oxlint config
 └── docker-compose.dev.yml
 ```
@@ -120,149 +162,120 @@ memo-mesh/
 ### Tech Stack
 
 - **Runtime**: Node.js 22.19.0, TypeScript 5.9
-- **Backend**: Fastify, Prisma ORM, PostgreSQL 16 + pgvector
-- **LLM**: Vercel AI SDK (OpenAI, Anthropic)
-- **Frontend**: React, TanStack Router, TanStack Query
-- **Graph**: Cytoscape.js or Sigma.js
+- **Backend**: Fastify 5, Prisma 7 (driver adapter pattern), PostgreSQL 16 + pgvector
+- **LLM**: Vercel AI SDK — `text-embedding-3-small` (1536-dim embeddings), `gpt-4o-mini` (structured extraction)
+- **Validation**: Zod schemas shared across all packages
 - **Code Quality**: oxlint, oxfmt, Vitest
 - **Package Manager**: pnpm workspaces
 
-### Core Flows
+### Core Data Flow
 
-1. **Ingest**: Message → Store raw → Extract facts/entities/relations → Embed → Store → Consolidate
-2. **Retrieve**: Query → Vector search → Rerank (similarity + recency) → Return context pack
-3. **Graph**: Fetch nodes/edges → Visualize relationships → Show evidence
+```
+POST /messages
+  → Store Message + raw Memory (Prisma transaction)
+  → [async] Embed raw memory → pgvector
+  → [async] extractKnowledge (gpt-4o-mini)
+      → Upsert Entities
+      → Create fact Memories
+      → Embed fact → pgvector
+      → Find similar active facts (cosine similarity > 0.70)
+          → Supersede duplicates (consolidation)
+      → Create EntityMentions + Relations
 
-## 🔧 Development
+POST /memories/search
+  → Embed query → pgvector similarity search
+  → Rank: finalScore = similarity×0.9 + recency×0.1
+  → Build contextPack (group facts by entity, unattached facts)
+  → Return { items, contextPack }
+
+GET /memories/:id/explain
+  → Fetch memory + source message + entity mentions
+  → Find similar memories across all statuses (consolidation history)
+  → Return full provenance
+```
+
+## API Reference
+
+All endpoints are currently unauthenticated — `projectId` is passed in the URL. Auth middleware is coming in Phase 3.
+
+```http
+GET  /health
+
+# Message ingestion
+POST /v1/projects/:projectId/messages
+
+# Semantic search + context pack
+POST /v1/projects/:projectId/memories/search
+
+# Knowledge graph
+GET  /v1/projects/:projectId/graph
+GET  /v1/projects/:projectId/graph/entity/:entityId
+
+# Memory provenance
+GET  /v1/projects/:projectId/memories/:memoryId/explain
+```
+
+## Development
 
 ### Available Scripts
 
 ```bash
 # Development
-pnpm dev              # Start all apps in dev mode
+pnpm dev              # Build packages, then start API server (tsx watch)
 pnpm build            # Build all packages
-pnpm lint             # Lint all code
-pnpm fmt              # Format all code
-pnpm test             # Run all tests
 
 # Database
 pnpm db:up            # Start PostgreSQL (Docker)
 pnpm db:down          # Stop PostgreSQL
 pnpm db:migrate       # Run Prisma migrations
-pnpm db:studio        # Open Prisma Studio
+pnpm db:studio        # Open Prisma Studio at localhost:5555
+pnpm db:seed          # Seed test user + project
+
+# Code Quality
+pnpm lint             # Lint all code (oxlint)
+pnpm fmt              # Format all code (oxfmt)
+pnpm test             # Run all tests (Vitest)
 ```
 
 ### Environment Variables
 
-Create a `.env` file (see `.env.example`):
+Create `.env.local` at the repo root:
 
 ```bash
+# Database (matches Docker Compose defaults)
 DATABASE_URL=postgresql://memo:memo@localhost:5432/memo_mesh
-KEY_ENCRYPTION_SECRET=your-secret-key-here  # For encrypting provider API keys
-SESSION_SECRET=your-session-secret-here     # For session cookies
+POSTGRES_USER=memo
+POSTGRES_PASSWORD=memo
+POSTGRES_DB=memo_mesh
+POSTGRES_PORT=5432
+
+# LLM — required for embeddings + fact extraction
+OPENAI_API_KEY=sk-your-key-here
+
+# Seed options (optional)
+SEED_LOG_SECRETS=false   # Set to "true" to print the API key in plaintext
+SEED_API_KEY=mm_abc123   # Override the generated API key (useful for dev)
 ```
 
 ### Project Conventions
 
-- See [`AGENTS.md`](./AGENTS.md) for development conventions and patterns
-- See [`CLAUDE.md`](./CLAUDE.md) for AI assistant guidelines
+- See [`AGENTS.md`](./AGENTS.md) for development conventions (branch names, commit style, CI)
+- See [`dev-plans/plan.md`](./dev-plans/plan.md) for the implementation checklist
 - See [`dev-plans/mvp-plan-final.md`](./dev-plans/mvp-plan-final.md) for detailed specifications
 
-## 🐳 Self-Hosting
+## License
 
-Memo Mesh is designed to be self-hosted on a simple VPS, similar to Supabase or Listmonk.
+MIT License — see [LICENSE](LICENSE) file for details.
 
-### Production Deployment
+## Resources
 
-1. **Clone and configure**:
-   ```bash
-   git clone <your-repo-url>
-   cd memo-mesh
-   cp .env.example .env
-   # Edit .env with production values
-   ```
-
-2. **Start services**:
-   ```bash
-   docker compose -f docker-compose.prod.yml up -d
-   ```
-
-3. **Run migrations**:
-   ```bash
-   pnpm db:migrate
-   ```
-
-4. **Access**:
-   - API: `http://your-domain:3000`
-   - Dashboard: `http://your-domain:3001` (when implemented)
-
-### Docker Compose
-
-The project includes:
-- `docker-compose.dev.yml` - Development (PostgreSQL only)
-- `docker-compose.prod.yml` - Production (full stack) - *Coming soon*
-
-## 📖 API Design
-
-### Authentication
-
-- **Dashboard**: Session-based auth (HttpOnly cookies)
-- **API**: Project API keys via `X-API-Key` header
-
-### Core Endpoints
-
-```
-POST   /v1/auth/register              # User registration
-POST   /v1/auth/login                # User login
-GET    /v1/auth/me                   # Current user
-
-POST   /v1/projects                  # Create project
-GET    /v1/projects                  # List projects
-
-POST   /v1/projects/:id/messages     # Ingest message
-POST   /v1/projects/:id/memories/search  # Semantic search
-GET    /v1/projects/:id/memories     # List memories
-GET    /v1/projects/:id/graph        # Knowledge graph
-```
-
-*Full API documentation coming in Stage 9*
-
-## 🔐 Security
-
-- **Provider Keys**: Encrypted at rest using AES-256-GCM
-- **Session Cookies**: HttpOnly, Secure, SameSite
-- **API Keys**: Auto-generated per project, stored securely
-- **Password Hashing**: bcrypt with salt rounds
-
-**Note**: For production deployments, consider using KMS (AWS/GCP) or per-project envelope encryption.
-
-## 🤝 Contributing
-
-This project is currently in active development. Contributions are welcome once we reach Stage 9 (OSS polish).
-
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-Inspired by:
-- [Supermemory](https://supermemory.ai/)
-- [Mem0](https://mem0.ai/)
-- [Supabase](https://supabase.com/) (deployment model)
-- [Listmonk](https://listmonk.app/) (self-hosting approach)
-
-## 📚 Resources
-
-- [Development Plan](./dev-plans/plan.md) - Detailed implementation checklist
-- [MVP Plan](./dev-plans/mvp-plan-final.md) - Complete specifications
-- [AGENTS.md](./AGENTS.md) - Development conventions
-- [Prisma Documentation](https://www.prisma.io/docs)
+- [Development Plan](./dev-plans/plan.md) — Implementation checklist
+- [MVP Specifications](./dev-plans/mvp-plan-final.md) — Detailed specs
 - [Vercel AI SDK](https://ai-sdk.dev/)
+- [pgvector](https://github.com/pgvector/pgvector)
+- [Prisma](https://www.prisma.io/)
 - [MCP Specification](https://modelcontextprotocol.io/)
 
 ---
 
-**Status**: 🚧 Early Development - Stage 1 Complete
-
-Built with ❤️ for developers who want control over their agent memory systems.
+**Status**: Phase 2 complete ✅ — Core pipeline fully operational. Next: Phase 3 (Auth + Projects).

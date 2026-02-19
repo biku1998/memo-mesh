@@ -45,8 +45,7 @@ docker-volumes/
 postgres-data/
 
 # Prisma
-# Note: Prisma client is generated and typically not ignored
-# but migrations are committed
+packages/db/src/generated/
 *.db
 *.db-journal
 

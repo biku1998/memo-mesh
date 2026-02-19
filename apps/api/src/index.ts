@@ -1,12 +1,21 @@
 import Fastify from "fastify";
+import { messageRoutes } from "./routes/messages.js";
+import { searchRoutes } from "./routes/search.js";
+import { graphRoutes } from "./routes/graph.js";
+import { memoryRoutes } from "./routes/memories.js";
 
 const fastify = Fastify({
-  logger: true
+  logger: true,
 });
 
 fastify.get("/health", () => {
   return { status: "ok" };
 });
+
+fastify.register(messageRoutes, { prefix: "/v1/projects/:projectId" });
+fastify.register(searchRoutes, { prefix: "/v1/projects/:projectId" });
+fastify.register(graphRoutes, { prefix: "/v1/projects/:projectId" });
+fastify.register(memoryRoutes, { prefix: "/v1/projects/:projectId" });
 
 // Parse and validate PORT environment variable
 const portEnv = process.env.PORT;
@@ -15,23 +24,21 @@ const defaultPort = 3000;
 let port: number;
 
 if (!portEnv || portEnv.trim() === "") {
-  // Missing or empty: use default
   port = defaultPort;
 } else {
   const portCandidate = Number(portEnv);
-  
-  // Validate: must be integer and within valid port range (1-65535)
+
   if (
     !Number.isInteger(portCandidate) ||
     portCandidate < 1 ||
     portCandidate > 65535
   ) {
     fastify.log.error(
-      `Invalid PORT value: "${portEnv}". Must be an integer between 1 and 65535.`
+      `Invalid PORT value: "${portEnv}". Must be an integer between 1 and 65535.`,
     );
     process.exit(1);
   }
-  
+
   port = portCandidate;
 }
 
@@ -44,4 +51,3 @@ fastify
     fastify.log.error(err);
     process.exit(1);
   });
-

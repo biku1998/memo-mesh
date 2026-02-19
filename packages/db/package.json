@@ -5,16 +5,25 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.json",
     "migrate": "prisma migrate dev",
     "studio": "prisma studio",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "dotenv": "^17.2.4",
-    "prisma": "^7.3.0"
+    "prisma": "^7.4.0"
   },
   "dependencies": {
-    "@prisma/client": "^7.3.0"
+    "@prisma/adapter-pg": "^7.4.0",
+    "@prisma/client": "^7.4.0"
   }
 }
