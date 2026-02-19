@@ -65,11 +65,17 @@ function repairAndParse(raw: unknown): ExtractionResultType | null {
     // Remove trailing commas before } or ]
     cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
 
-    // Attempt to close unclosed braces/brackets (best-effort)
+    // Attempt to close unclosed braces and brackets (best-effort)
     const opens = (cleaned.match(/{/g) || []).length;
     const closes = (cleaned.match(/}/g) || []).length;
     if (opens > closes) {
       cleaned += "}".repeat(opens - closes);
+    }
+
+    const opensArr = (cleaned.match(/\[/g) || []).length;
+    const closesArr = (cleaned.match(/\]/g) || []).length;
+    if (opensArr > closesArr) {
+      cleaned += "]".repeat(opensArr - closesArr);
     }
 
     const parsed: unknown = JSON.parse(cleaned);

@@ -321,6 +321,9 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 ### CI/CD + Hooks
 
 - [ ] Set up GitHub Actions workflow (typecheck, lint, fmt:check, test)
+  - [ ] Start Postgres service container in CI (with pgvector image)
+  - [ ] Run `prisma migrate deploy` (or `prisma migrate dev`) before the test step; provide `DATABASE_URL` secret
+  - [ ] Run test step only after migrations succeed
 - [ ] Set up Husky + lint-staged (oxlint --fix + oxfmt on staged files)
 - [ ] Cache pnpm dependencies in CI
 

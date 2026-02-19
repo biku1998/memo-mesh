@@ -145,7 +145,7 @@ See [`dev-plans/plan.md`](./dev-plans/plan.md) for detailed progress tracking.
 
 ### Monorepo Structure
 
-```
+```text
 memo-mesh/
 ├── apps/
 │   ├── api/           # Fastify HTTP API (all core endpoints)
@@ -198,7 +198,7 @@ GET /memories/:id/explain
 
 All endpoints are currently unauthenticated — `projectId` is passed in the URL. Auth middleware is coming in Phase 3.
 
-```
+```http
 GET  /health
 
 # Message ingestion

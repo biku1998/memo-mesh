@@ -9,6 +9,16 @@ export async function storeMemoryEmbedding(
   memoryId: string,
   embedding: number[],
 ): Promise<void> {
+  if (!Array.isArray(embedding) || embedding.length === 0) {
+    throw new Error(
+      `storeMemoryEmbedding: embedding must be a non-empty array (memoryId=${memoryId})`,
+    );
+  }
+  if (!embedding.every(Number.isFinite)) {
+    throw new Error(
+      `storeMemoryEmbedding: embedding contains non-finite values (memoryId=${memoryId})`,
+    );
+  }
   const vectorStr = `[${embedding.join(",")}]`;
   await prisma.$executeRawUnsafe(
     `INSERT INTO "MemoryEmbedding" ("memoryId", "embedding")
@@ -78,9 +88,29 @@ export async function findSimilarActiveFacts(opts: {
   const { projectId, embedding, threshold, excludeMemoryId } = opts;
   const vectorStr = `[${embedding.join(",")}]`;
 
-  const excludeFilter = excludeMemoryId
-    ? `AND m."id" != '${excludeMemoryId}'`
-    : "";
+  // Use a parameterized placeholder for excludeMemoryId to avoid SQL injection.
+  // When present it becomes $4; when absent the clause is omitted entirely.
+  if (excludeMemoryId) {
+    return prisma.$queryRawUnsafe(
+      `SELECT
+         m."id" AS "memoryId",
+         m."text",
+         1 - (me."embedding" <=> $1::vector) AS "similarity"
+       FROM "MemoryEmbedding" me
+       JOIN "Memory" m ON m."id" = me."memoryId"
+       WHERE m."projectId" = $2
+         AND m."status" = 'active'
+         AND m."type" = 'fact'
+         AND m."id" != $4
+         AND 1 - (me."embedding" <=> $1::vector) > $3
+       ORDER BY me."embedding" <=> $1::vector
+       LIMIT 5`,
+      vectorStr,
+      projectId,
+      threshold,
+      excludeMemoryId,
+    );
+  }
 
   return prisma.$queryRawUnsafe(
     `SELECT
@@ -92,7 +122,6 @@ export async function findSimilarActiveFacts(opts: {
      WHERE m."projectId" = $2
        AND m."status" = 'active'
        AND m."type" = 'fact'
-       ${excludeFilter}
        AND 1 - (me."embedding" <=> $1::vector) > $3
      ORDER BY me."embedding" <=> $1::vector
      LIMIT 5`,
