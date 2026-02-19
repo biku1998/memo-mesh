@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ContextPack } from "./context-pack.js";
 
 export const SearchMemoriesBody = z.object({
   query: z.string().min(1, "Query must not be empty"),
@@ -22,6 +23,7 @@ export type SearchMemoryItem = z.infer<typeof SearchMemoryItem>;
 
 export const SearchMemoriesResponse = z.object({
   items: z.array(SearchMemoryItem),
+  contextPack: ContextPack,
 });
 
 export type SearchMemoriesResponse = z.infer<typeof SearchMemoriesResponse>;

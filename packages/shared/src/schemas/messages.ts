@@ -6,6 +6,13 @@ export const ProjectParams = z.object({
 
 export type ProjectParams = z.infer<typeof ProjectParams>;
 
+export const MemoryParams = z.object({
+  projectId: z.string().min(1, "projectId is required"),
+  memoryId: z.string().min(1, "memoryId is required"),
+});
+
+export type MemoryParams = z.infer<typeof MemoryParams>;
+
 export const MessageRole = z.enum(["user", "assistant", "system"]);
 
 export const CreateMessageBody = z.object({

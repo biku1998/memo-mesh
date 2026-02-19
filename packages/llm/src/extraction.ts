@@ -8,7 +8,7 @@ const EXTRACTION_PROMPT = `You are a knowledge extraction system. Given a user m
 
 Extract:
 1. **Entities**: People, places, organizations, products, concepts mentioned. Include the user themselves if relevant (as "user").
-2. **Facts**: Stable preferences, traits, constraints, biographical details. Each fact should be a single, self-contained statement. Assign a confidence score (0-1) based on how certain the statement is. Optionally assign importance (0-1) for how useful this is for personalization.
+2. **Facts**: Stable preferences, traits, constraints, biographical details. Each fact should be a single, self-contained statement. Assign a confidence score (0-1) based on how certain the statement is. Optionally assign importance (0-1) for how useful this is for personalization. For each fact, list the entity names (from the entities array above) that the fact is about in the "entities" field.
 3. **Relations**: Subject-predicate-object triples connecting entities (e.g., "user" - "prefers" - "TypeScript").
 
 Rules:
@@ -17,7 +17,8 @@ Rules:
 - If the message contains no extractable knowledge, return empty arrays.
 - Keep fact text concise but complete.
 - Entity names should be specific (e.g., "TypeScript" not "a programming language").
-- Use "user" as the entity name for the person speaking.`;
+- Use "user" as the entity name for the person speaking.
+- The "entities" field on each fact must contain the exact entity names (as strings) that appear in the top-level entities list.`;
 
 const EMPTY_EXTRACTION: ExtractionResultType = {
   entities: [],

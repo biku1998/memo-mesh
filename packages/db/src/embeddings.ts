@@ -102,6 +102,49 @@ export async function findSimilarActiveFacts(opts: {
   );
 }
 
+export interface SimilarMemoryResult {
+  memoryId: string;
+  text: string;
+  type: string;
+  status: string;
+  similarity: number;
+}
+
+/**
+ * Find memories similar to a given memory (by its stored embedding).
+ * Searches across ALL statuses (active + superseded) — used in explain endpoint.
+ * Uses a subquery to retrieve the stored embedding without a round-trip.
+ */
+export async function findSimilarMemoriesByMemoryId(opts: {
+  memoryId: string;
+  projectId: string;
+  k: number;
+}): Promise<SimilarMemoryResult[]> {
+  const { memoryId, projectId, k } = opts;
+
+  return prisma.$queryRawUnsafe<SimilarMemoryResult[]>(
+    `SELECT
+       m."id" AS "memoryId",
+       m."text",
+       m."type",
+       m."status",
+       1 - (me."embedding" <=> (
+         SELECT "embedding" FROM "MemoryEmbedding" WHERE "memoryId" = $1
+       )) AS "similarity"
+     FROM "MemoryEmbedding" me
+     JOIN "Memory" m ON m."id" = me."memoryId"
+     WHERE m."projectId" = $2
+       AND m."id" != $1
+     ORDER BY me."embedding" <=> (
+       SELECT "embedding" FROM "MemoryEmbedding" WHERE "memoryId" = $1
+     )
+     LIMIT $3`,
+    memoryId,
+    projectId,
+    k,
+  );
+}
+
 /**
  * Mark a memory as superseded (used during consolidation).
  */

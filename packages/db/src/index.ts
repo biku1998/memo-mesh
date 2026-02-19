@@ -24,6 +24,12 @@ export {
   storeMemoryEmbedding,
   searchMemoriesByVector,
   findSimilarActiveFacts,
+  findSimilarMemoriesByMemoryId,
   supersedeMemory,
 } from "./embeddings.js";
-export type { VectorSearchResult } from "./embeddings.js";
+export type { VectorSearchResult, SimilarMemoryResult } from "./embeddings.js";
+export {
+  getMemoriesWithEntityMentions,
+  getMemoryWithProvenance,
+} from "./memories.js";
+export type { MemoryWithMentions, MemoryEntityMention } from "./memories.js";

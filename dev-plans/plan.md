@@ -158,20 +158,25 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 **2F Acceptance**: ✅ "I eat only plant-based food" → new fact active, old "user follows a vegetarian diet" superseded. Evidence chain preserved.
 
-### 2G — Context Pack + Explain
+### 2G — Context Pack + Explain ✅
 
-- [ ] Implement context pack builder utility (`packages/shared` or `apps/api`)
-  - Dedupe preferences by entity
-  - Group facts by entity
-  - Generate brief narrative summary
-  - Include evidence messages
-  - Return structured `ContextPack` format
-- [ ] Update `/memories/search` to return `{ items, contextPack }` response
-- [ ] Implement `GET /v1/projects/:projectId/memories/:memoryId/explain` endpoint
-  - Return similarity matches, evidence chain, extraction payload
-  - Return consolidation history if applicable
+- [x] Define `ContextPack`, `ContextPackEntity`, `ContextPackFact` Zod schemas in `packages/shared`
+- [x] Add `MemoryParams` Zod schema (projectId + memoryId) for param validation
+- [x] Add `getMemoriesWithEntityMentions` DB helper to fetch entity mentions per memory
+- [x] Add `getMemoryWithProvenance` DB helper (memory + source message + entity mentions)
+- [x] Add `findSimilarMemoriesByMemoryId` DB helper (cross-status vector search via subquery)
+- [x] Implement context pack builder (`buildContextPack`) in search route
+  - Groups facts by entity using entity mention joins
+  - Unlinked facts go in `unattachedFacts`
+  - Generates brief narrative summary
+  - Includes `evidenceMessageId` per fact
+- [x] Update `/memories/search` to return `{ items, contextPack }`
+- [x] Implement `GET /v1/projects/:projectId/memories/:memoryId/explain` endpoint
+  - Returns memory details, source message, entity mentions, similar memories
+  - Similar memories include superseded facts (consolidation history)
+- [x] Fix extraction prompt to instruct LLM to populate `fact.entities` field
 
-**2G Acceptance**: Search returns structured context pack. Explain endpoint shows full provenance and reasoning.
+**2G Acceptance**: ✅ Search returns contextPack with facts grouped by entity (user, TypeScript). Explain endpoint shows full provenance (source message, entity mentions) and consolidation history (superseded "user works at Stripe" visible as similar memory).
 
 ---
 
@@ -353,9 +358,9 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### Progress Tracking
 
-- Current phase: Phase 2G (Context Pack + Explain)
+- Current phase: Phase 3 (Auth + Projects + Provider Keys)
 - Phase 1: ✅ Complete
-- Phase 2: 🟡 In progress (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E ✅ | 2F ✅ | 2G ⬜)
+- Phase 2: ✅ Complete (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E ✅ | 2F ✅ | 2G ✅)
 - Phase 3: ⬜ Not started
 - Phase 4: ⬜ Not started
 - Phase 5: ⬜ Not started
