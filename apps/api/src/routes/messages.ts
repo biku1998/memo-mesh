@@ -122,6 +122,37 @@ async function processExtraction(
 }
 
 export const messageRoutes: FastifyPluginAsync = async (fastify) => {
+  /**
+   * GET /v1/projects/:projectId/messages?limit=20
+   * Returns recent messages for a project, newest first.
+   */
+  fastify.get("/messages", async (request, reply) => {
+    const parsedParams = ProjectParams.safeParse(request.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({ error: "Validation failed" });
+    }
+    const { projectId } = parsedParams.data;
+
+    const query = request.query as Record<string, string>;
+    const limit = Math.min(Math.max(Number(query.limit ?? 20), 1), 100);
+
+    const messages = await prisma.message.findMany({
+      where: { projectId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: { id: true, role: true, content: true, createdAt: true },
+    });
+
+    return reply.send(
+      messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        createdAt: m.createdAt.toISOString(),
+      })),
+    );
+  });
+
   fastify.post("/messages", async (request, reply) => {
     // Validate params
     const parsedParams = ProjectParams.safeParse(request.params);

@@ -8,6 +8,52 @@ import { MemoryParams } from "@memo-mesh/shared";
 
 export const memoryRoutes: FastifyPluginAsync = async (fastify) => {
   /**
+   * GET /v1/projects/:projectId/memories?type=fact&status=active&limit=50
+   * Returns recent memories for a project, newest first.
+   */
+  fastify.get("/memories", async (request, reply) => {
+    const parsedParams = (request.params as Record<string, string>);
+    const projectId = parsedParams.projectId;
+    if (!projectId) {
+      return reply.status(400).send({ error: "projectId is required" });
+    }
+
+    const query = request.query as Record<string, string>;
+    const type = query.type ?? "fact";
+    const status = query.status ?? "active";
+    const limit = Math.min(Math.max(Number(query.limit ?? 50), 1), 200);
+
+    const memories = await prisma.memory.findMany({
+      where: { projectId, type, status },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        text: true,
+        type: true,
+        status: true,
+        confidence: true,
+        importance: true,
+        createdAt: true,
+        sourceMessageId: true,
+      },
+    });
+
+    return reply.send(
+      memories.map((m) => ({
+        memoryId: m.id,
+        text: m.text,
+        type: m.type,
+        status: m.status,
+        confidence: m.confidence,
+        importance: m.importance,
+        createdAt: m.createdAt.toISOString(),
+        sourceMessageId: m.sourceMessageId,
+      })),
+    );
+  });
+
+  /**
    * GET /v1/projects/:projectId/memories/:memoryId/explain
    *
    * Returns full provenance for a memory:
