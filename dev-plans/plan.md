@@ -182,80 +182,148 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ## Phase 3 — Auth + Projects + Provider Keys
 
-> **Strategy**: Now wrap the working core with proper auth, project management, and encrypted key storage.
+> **Strategy**: Split into two sub-phases. 3A delivers the minimal auth gate needed to unlock the Playground (Phase 4). 3B adds encrypted provider key management — not required for the playground since `OPENAI_API_KEY` env var still works in dev.
 
-### User Authentication
+### 3A — Minimal Auth Gate (prerequisite for Playground)
 
-- [ ] Add password hashing utility (bcrypt or similar)
+#### User Authentication
+
+- [ ] Add password hashing utility (`bcryptjs` or Node.js built-in `crypto.scrypt`)
 - [ ] Implement `POST /v1/auth/register` (email + password)
-- [ ] Implement `POST /v1/auth/login` (email + password → session cookie)
+- [ ] Implement `POST /v1/auth/login` (email + password → HttpOnly session cookie)
 - [ ] Implement `POST /v1/auth/logout` (clears session)
 - [ ] Implement `GET /v1/auth/me` (returns current user)
-- [ ] Add session middleware (HttpOnly cookies, no JWT)
-- [ ] Add password validation (min length, etc.)
+- [ ] Add session middleware (HttpOnly cookies, no JWT; use `@fastify/cookie` + `@fastify/session`)
+- [ ] Add password validation (min 8 chars)
 
-### Projects Management
+#### Projects Management
 
-- [ ] Implement `POST /v1/projects` (creates project + auto-generates API key)
-- [ ] Implement `GET /v1/projects` (list user's projects, requires session)
-- [ ] Add project API key generation (crypto.randomBytes or similar)
-- [ ] Store API key in `Project.apiKey` field
+- [ ] Implement `POST /v1/projects` — `{ name, provider }` → creates project + auto-generates API key
+- [ ] Implement `GET /v1/projects` — list user's projects (requires session)
+- [ ] Add project API key generation (`crypto.randomBytes(24).toString("hex")`)
+- [ ] Store API key hashed or plaintext in `Project.apiKey` field
 
-### Provider Keys (Global)
+#### Auth Middleware
 
-- [ ] Implement encryption utility (`crypto` AES-256-GCM)
-- [ ] Implement `PUT /v1/admin/provider-keys` (encrypts and stores key)
-- [ ] Implement `GET /v1/admin/provider-keys` (returns masked metadata)
-- [ ] Update `packages/llm` to read provider keys from DB (decrypt) instead of env vars
-
-### Auth Middleware
-
-- [ ] Add session auth middleware for dashboard routes
-- [ ] Add `X-API-Key` auth middleware for API routes (messages, search)
-- [ ] Add project lookup by API key
-- [ ] Add project ownership validation
+- [ ] Add session auth middleware for dashboard/web routes (verifies session cookie)
+- [ ] Add `X-API-Key` middleware for agent-facing routes (`/messages`, `/memories/search`, `/graph`, `/memories/:id/explain`)
+- [ ] Add project lookup by API key + project ownership validation
 - [ ] Wire middleware into all existing core endpoints
 
-**Phase 3 Acceptance**: Can register → login → create project → use API key for ingestion/search. Provider keys encrypted in DB.
+**3A Acceptance**: Can register → login → create project → see project list. Existing core endpoints now require `X-API-Key`. Ready to build the Playground.
 
 ---
 
-## Phase 4 — Dashboard UI
+### 3B — Provider Key Management (after Playground validation)
 
-> **Strategy**: Build the read-only dashboard now that all API endpoints exist and are authenticated.
+- [ ] Implement encryption utility (`crypto` AES-256-GCM, keyed by `KEY_ENCRYPTION_SECRET` env var)
+- [ ] Implement `PUT /v1/admin/provider-keys` — encrypts and stores provider API key
+- [ ] Implement `GET /v1/admin/provider-keys` — returns masked metadata only
+- [ ] Update `packages/llm` to read provider keys from DB (decrypt) instead of env vars
+- [ ] Document key rotation process in README
 
-### Web App Setup
+**3B Acceptance**: Provider keys encrypted at rest. `packages/llm` reads from DB, not env vars. Never logs raw keys.
 
-- [ ] Set up `apps/web` with React + TanStack Router + TanStack Query
-- [ ] Add login/register pages
-- [ ] Add project switcher
+---
 
-### Memory Explorer Page
+## Phase 4 — Playground + Dashboard
 
-- [ ] Implement `GET /v1/projects/:projectId/memories?type=fact&cursor=...` endpoint (if not done)
-- [ ] Create Memory Explorer page
+> **Strategy**: Build the Playground workbench first as the production-quality frontend (no throwaway code — uses TanStack Router + TanStack Query from day one). Validate the full core pipeline end-to-end in the UI before adding graph visualization and the full explorer.
+
+### 4A — Web App Setup
+
+- [ ] Initialize `apps/web` with Vite + React + TypeScript
+- [ ] Add TanStack Router (file-based routing)
+- [ ] Add TanStack Query (API data fetching + caching)
+- [ ] Add Tailwind CSS + base layout (sidebar nav, main content area)
+- [ ] Add API client utility (typed fetch wrapper pointing to `apps/api`)
+- [ ] Set up `apps/web` dev script (`vite`) + include in `pnpm dev`
+- [ ] Configure CORS on `apps/api` for web dev server origin
+
+#### Auth Pages
+
+- [ ] Login page (`/login`) — email + password → calls `POST /v1/auth/login`
+- [ ] Register page (`/register`) — calls `POST /v1/auth/register`
+- [ ] Protected route wrapper — redirects unauthenticated users to `/login`
+- [ ] Project list page (`/projects`) — calls `GET /v1/projects`, link to select a project
+
+### 4B — Workbench Page (Playground core)
+
+> Route: `/projects/:projectId/workbench`
+
+**Layout**: Split-panel — left 40% ingest + extracted results, right 60% search + context pack.
+
+#### Left panel — Ingest
+
+- [ ] Message input (textarea + role selector: user / assistant / system)
+- [ ] Send button → calls `POST /messages` with project's API key
+- [ ] After send: show "Extracting..." spinner, then **auto-poll** `GET /memories` (recent facts) every 2s for up to 15s
+- [ ] Once facts appear (or polling timeout): render extracted facts list with confidence badges
+- [ ] Show entity tags per fact (from `entityMentions`)
+- [ ] Show message history (recent messages sent this session)
+
+#### Right panel — Search + Context Pack
+
+- [ ] Search input → calls `POST /memories/search` on submit
+- [ ] Results list: ranked items with similarity score, recency boost, final score
+- [ ] Context pack section below results:
+  - Summary line (e.g., "Found 5 facts across 2 entities")
+  - Facts grouped by entity (collapsible per entity)
+  - Unattached facts section
+- [ ] Each fact row: click to open the Explain drawer (4C)
+
+**4B Acceptance**: Send "I am vegetarian" → facts appear in left panel within ~5s. Search "diet" → returns ranked results with contextPack grouping. Full pipeline visible in a single screen.
+
+### 4C — Explain Drawer
+
+> Slide-in panel triggered by clicking any fact (in left panel or search results)
+
+- [ ] Calls `GET /memories/:memoryId/explain`
+- [ ] Shows: memory text, type, status (active / superseded badge), confidence
+- [ ] Shows: source message (evidence) — role + full content + timestamp
+- [ ] Shows: entity mentions (entity name + kind chips)
+- [ ] Shows: similar memories list (with status badges — active/superseded) — consolidation history
+- [ ] Keyboard shortcut to close (`Esc`)
+
+**4C Acceptance**: Click any fact → drawer slides in showing its source message and consolidation history. Evidence loop is closed.
+
+---
+
+> ### Playground Acceptance Gate
+>
+> Before building 4D/4E, validate the full pipeline end-to-end in the UI:
+>
+> - [ ] Send 3-4 diverse messages → facts, entities, relations extracted and visible
+> - [ ] Duplicate message sent → old fact shows as superseded in explain drawer
+> - [ ] Search returns semantically relevant results with context pack
+> - [ ] Explain drawer shows correct source message + entity mentions
+> - [ ] Core pipeline is "nailed" ✅ — proceed to graph + explorer
+
+---
+
+### 4D — Knowledge Graph Page
+
+> Route: `/projects/:projectId/graph`
+
+- [ ] Install graph visualization library (Cytoscape.js recommended for quick ship)
+- [ ] Fetch graph data from `GET /graph`
+- [ ] Render interactive graph: entity nodes + relation edges
+- [ ] Click node → right side panel with entity details, outgoing/incoming relations, evidence memories
+- [ ] Color-code nodes by entity `kind` (person, organization, product, etc.)
+- [ ] Edge labels show relation predicate
+
+### 4E — Memory Explorer Page
+
+> Route: `/projects/:projectId/memories`
+
+- [ ] Implement `GET /v1/projects/:projectId/memories?type=fact&status=active&cursor=...` API endpoint
+- [ ] Paginated list of memories (cursor-based)
 - [ ] Filter by type (`fact`, `raw`) and status (`active`, `superseded`)
 - [ ] Show facts with confidence + createdAt
-- [ ] Click → view evidence message + related graph edges
-- [ ] Add "Evidence" icon next to every fact
+- [ ] Click row → opens Explain drawer (reuse 4C component)
+- [ ] "Evidence" icon on every fact row
 
-### Knowledge Graph Page
-
-- [ ] Install graph visualization library (Cytoscape.js or Sigma.js)
-- [ ] Create Knowledge Graph page
-- [ ] Fetch graph data from API
-- [ ] Render interactive graph
-- [ ] Click node → side panel with entity details, relations, evidence memories
-
-### Search Page
-
-- [ ] Create Search page
-- [ ] Add search input calling `/memories/search`
-- [ ] Display search results
-- [ ] Show "context pack preview" (what the agent would receive)
-- [ ] Format context pack nicely (preferences, constraints, evidence)
-
-**Phase 4 Acceptance**: Dashboard shows memories, graph, and search. Evidence is visible everywhere. All pages work with real authenticated data.
+**Phase 4 Acceptance**: Full dashboard working — workbench, explain, graph, memory explorer. All data authenticated. Evidence visible everywhere.
 
 ---
 
