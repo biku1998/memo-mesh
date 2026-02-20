@@ -14,5 +14,9 @@ export async function getDecryptedProviderApiKey(provider: string): Promise<stri
   const row = await prisma.providerKey.findUnique({ where: { provider } });
   if (!row) return null;
 
-  return decrypt(row.encryptedKey, encryptionSecret);
+  try {
+    return decrypt(row.encryptedKey, encryptionSecret);
+  } catch {
+    return null;
+  }
 }

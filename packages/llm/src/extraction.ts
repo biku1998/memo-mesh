@@ -1,22 +1,7 @@
 import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { getDecryptedProviderApiKey } from "@memo-mesh/db";
 import { ExtractionResult, type ExtractionResult as ExtractionResultType } from "@memo-mesh/shared";
-
-/**
- * Resolves the OpenAI API key, preferring the encrypted DB value and
- * falling back to the OPENAI_API_KEY env var (useful for local dev).
- */
-async function getOpenAIApiKey(): Promise<string> {
-  const dbKey = await getDecryptedProviderApiKey("openai");
-  const key = dbKey ?? process.env.OPENAI_API_KEY;
-  if (!key) {
-    throw new Error(
-      "OpenAI API key not configured — set OPENAI_API_KEY env var or store it via PUT /v1/admin/provider-keys",
-    );
-  }
-  return key;
-}
+import { getOpenAIApiKey } from "./openai-key.js";
 
 const EXTRACTION_PROMPT = `You are a knowledge extraction system. Given a user message, extract structured knowledge.
 
