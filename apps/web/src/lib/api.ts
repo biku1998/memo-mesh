@@ -226,4 +226,23 @@ export function explainMemory(projectId: string, apiKey: string, memoryId: strin
   });
 }
 
+// --- Provider Keys ---
+
+export interface ProviderKeyInfo {
+  provider: string;
+  maskedKey: string;
+  updatedAt: string;
+}
+
+export function getProviderKeys() {
+  return request<ProviderKeyInfo[]>("/v1/admin/provider-keys");
+}
+
+export function upsertProviderKey(provider: "openai" | "anthropic", key: string) {
+  return request<{ provider: string; updatedAt: string }>("/v1/admin/provider-keys", {
+    method: "PUT",
+    body: JSON.stringify({ provider, key }),
+  });
+}
+
 export { ApiError };

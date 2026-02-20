@@ -10,6 +10,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { WorkbenchPage } from "./pages/WorkbenchPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 // Root layout — just renders children
 const rootRoute = createRootRoute({
@@ -57,6 +58,13 @@ const workbenchRoute = createRoute({
   component: WorkbenchPage,
 });
 
+// /settings
+const settingsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/settings",
+  component: SettingsPage,
+});
+
 // Redirect / → /projects
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -70,7 +78,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
-  protectedRoute.addChildren([projectsRoute, workbenchRoute]),
+  protectedRoute.addChildren([projectsRoute, workbenchRoute, settingsRoute]),
 ]);
 
 export const router = createRouter({ routeTree });
