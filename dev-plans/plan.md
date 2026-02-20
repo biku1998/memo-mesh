@@ -295,11 +295,11 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 >
 > Before building 4D/4E, validate the full pipeline end-to-end in the UI:
 >
-> - [ ] Send 3-4 diverse messages → facts, entities, relations extracted and visible
-> - [ ] Duplicate message sent → old fact shows as superseded in explain drawer
-> - [ ] Search returns semantically relevant results with context pack
-> - [ ] Explain drawer shows correct source message + entity mentions
-> - [ ] Core pipeline is "nailed" ✅ — proceed to graph + explorer
+> - [x] Send 3-4 diverse messages → facts, entities, relations extracted and visible
+> - [x] Duplicate message sent → old fact shows as superseded in explain drawer
+> - [x] Search returns semantically relevant results with context pack
+> - [x] Explain drawer shows correct source message + entity mentions
+> - [x] Core pipeline is "nailed" ✅ — proceed to graph + explorer
 
 ---
 
@@ -431,11 +431,11 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### Progress Tracking
 
-- Current phase: Phase 4 — Playground Acceptance Gate
+- Current phase: Phase 4 — 4D Knowledge Graph
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E ✅ | 2F ✅ | 2G ✅)
-- Phase 3: 🔄 In progress (3A ✅ | 3B ⬜)
-- Phase 4: 🔄 In progress (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ⬜ | 4D ⬜ | 4E ⬜)
+- Phase 3: ✅ Complete (3A ✅ | 3B ✅)
+- Phase 4: 🔄 In progress (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ✅ | 4D ⬜ | 4E ⬜)
 - Phase 5: ⬜ Not started
 - Phase 6: ⬜ Not started
 
