@@ -1,7 +1,10 @@
 import { FastifyPluginAsync } from "fastify";
 import crypto from "node:crypto";
+import { z } from "zod";
 import { prisma } from "@memo-mesh/db";
 import { CreateProjectBody } from "@memo-mesh/shared";
+
+const GetProjectApiKeyParams = z.object({ projectId: z.string().min(1, "projectId is required") });
 
 export const projectRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /v1/projects — create a new project (requires session)
@@ -63,7 +66,11 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(401).send({ error: "Not authenticated" });
     }
 
-    const { projectId } = request.params as { projectId: string };
+    const parsedParams = GetProjectApiKeyParams.safeParse(request.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({ error: parsedParams.error.issues[0]?.message ?? "Invalid params" });
+    }
+    const { projectId } = parsedParams.data;
 
     const project = await prisma.project.findFirst({
       where: { id: projectId, userId },

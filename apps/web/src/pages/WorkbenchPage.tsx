@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useParams, Link } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getProjects,
   getProjectApiKey,
@@ -267,19 +267,20 @@ function IngestPanel({
   const [polling, setPolling] = useState(false);
   // Tracks newly extracted fact IDs from the most recent send (for highlighting)
   const [newFactIds, setNewFactIds] = useState<Set<string>>(new Set());
+  const qc = useQueryClient();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevFactCountRef = useRef<number | null>(null);
   // Snapshot of fact IDs at send time — avoids stale closure inside the interval
   const prevFactIdsRef = useRef<Set<string>>(new Set());
 
   // Load persisted messages from DB
-  const { data: messages, refetch: refetchMessages } = useQuery({
+  const { data: messages } = useQuery({
     queryKey: ["messages", projectId],
     queryFn: () => getMessages(projectId, apiKey, 20),
   });
 
   // Load persisted facts from DB
-  const { data: facts, refetch: refetchFacts } = useQuery({
+  const { data: facts } = useQuery({
     queryKey: ["facts", projectId],
     queryFn: () => getFactMemories(projectId, apiKey, 50),
   });
@@ -288,18 +289,25 @@ function IngestPanel({
     mutationFn: () => sendMessage(projectId, apiKey, role, content.trim()),
     onSuccess: () => {
       setContent("");
-      refetchMessages();
+      qc.invalidateQueries({ queryKey: ["messages", projectId] });
       // Snapshot current fact IDs into a ref so the interval doesn't close over
       // the stale `facts` React state variable.
       prevFactCountRef.current = facts?.length ?? 0;
       prevFactIdsRef.current = new Set((facts ?? []).map((f) => f.memoryId));
       setNewFactIds(new Set());
+      // Clear any existing interval before starting a new one
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
       setPolling(true);
       const deadline = Date.now() + 15_000;
       pollRef.current = setInterval(async () => {
         try {
-          const refreshed = await getFactMemories(projectId, apiKey, 50);
-          refetchFacts();
+          const refreshed = await qc.fetchQuery({
+            queryKey: ["facts", projectId],
+            queryFn: () => getFactMemories(projectId, apiKey, 50),
+          });
           // If new facts appeared, mark them and stop polling
           if (refreshed.length > (prevFactCountRef.current ?? 0)) {
             const freshIds = new Set(
