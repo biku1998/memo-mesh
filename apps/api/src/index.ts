@@ -4,6 +4,7 @@ import fastifySession from "@fastify/session";
 import fastifyCors from "@fastify/cors";
 import { authRoutes } from "./routes/auth.js";
 import { projectRoutes } from "./routes/projects.js";
+import { providerKeyRoutes } from "./routes/providerKeys.js";
 import { messageRoutes } from "./routes/messages.js";
 import { searchRoutes } from "./routes/search.js";
 import { graphRoutes } from "./routes/graph.js";
@@ -41,9 +42,10 @@ await fastify.register(fastifySession, {
 // --- Health ---
 fastify.get("/health", () => ({ status: "ok" }));
 
-// --- Auth + Project routes (no API key required) ---
+// --- Auth + Project + Admin routes (session-gated, no API key required) ---
 fastify.register(authRoutes);
 fastify.register(projectRoutes);
+fastify.register(providerKeyRoutes);
 
 // --- Core routes (require X-API-Key) ---
 const API_PREFIX = "/v1/projects/:projectId";

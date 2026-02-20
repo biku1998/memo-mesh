@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
+    "@memo-mesh/db": "workspace:*",
     "@memo-mesh/shared": "workspace:*",
     "ai": "^4.3.16"
   }

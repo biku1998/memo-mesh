@@ -38,3 +38,5 @@ export {
   getMemoryWithProvenance,
 } from "./memories.js";
 export type { MemoryWithMentions, MemoryEntityMention } from "./memories.js";
+export { encrypt, decrypt } from "./encryption.js";
+export { getDecryptedProviderApiKey } from "./provider-keys.js";
