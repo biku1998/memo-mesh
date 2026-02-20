@@ -303,7 +303,21 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ---
 
-### 4D — Knowledge Graph Page
+### 4D — Settings Page
+
+> Route: `/settings`
+
+- [ ] Add `/settings` route to TanStack Router
+- [ ] Add "Settings" nav link in header/sidebar (visible when logged in)
+- [ ] Fetch current provider keys on mount (`GET /v1/admin/provider-keys`) — show masked key + last updated
+- [ ] Form with provider selector (openai / anthropic) + API key input
+- [ ] Submit → `PUT /v1/admin/provider-keys` → toast success/error
+- [ ] Show "Not configured" badge when no key is stored for a provider
+- [ ] Handle `503` gracefully (KEY_ENCRYPTION_SECRET not set on server)
+
+**4D Acceptance**: Can navigate to /settings, see masked keys, set a new key, and confirm it appears masked after save.
+
+### 4E — Knowledge Graph Page
 
 > Route: `/projects/:projectId/graph`
 
@@ -314,7 +328,7 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 - [ ] Color-code nodes by entity `kind` (person, organization, product, etc.)
 - [ ] Edge labels show relation predicate
 
-### 4E — Memory Explorer Page
+### 4F — Memory Explorer Page
 
 > Route: `/projects/:projectId/memories`
 
@@ -325,7 +339,7 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 - [ ] Click row → opens Explain drawer (reuse 4C component)
 - [ ] "Evidence" icon on every fact row
 
-**Phase 4 Acceptance**: Full dashboard working — workbench, explain, graph, memory explorer. All data authenticated. Evidence visible everywhere.
+**Phase 4 Acceptance**: Full dashboard working — workbench, explain, graph, memory explorer, settings. All data authenticated. Evidence visible everywhere.
 
 ---
 
@@ -431,11 +445,11 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### Progress Tracking
 
-- Current phase: Phase 4 — 4D Knowledge Graph
+- Current phase: Phase 4 — 4D Settings Page + 4E Knowledge Graph
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E ✅ | 2F ✅ | 2G ✅)
 - Phase 3: ✅ Complete (3A ✅ | 3B ✅)
-- Phase 4: 🔄 In progress (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ✅ | 4D ⬜ | 4E ⬜)
+- Phase 4: 🔄 In progress (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ✅ | 4D ⬜ | 4E ⬜ | 4F ⬜)
 - Phase 5: ⬜ Not started
 - Phase 6: ⬜ Not started
 
