@@ -188,29 +188,31 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 #### User Authentication
 
-- [ ] Add password hashing utility (`bcryptjs` or Node.js built-in `crypto.scrypt`)
-- [ ] Implement `POST /v1/auth/register` (email + password)
-- [ ] Implement `POST /v1/auth/login` (email + password → HttpOnly session cookie)
-- [ ] Implement `POST /v1/auth/logout` (clears session)
-- [ ] Implement `GET /v1/auth/me` (returns current user)
-- [ ] Add session middleware (HttpOnly cookies, no JWT; use `@fastify/cookie` + `@fastify/session`)
-- [ ] Add password validation (min 8 chars)
+- [x] Add password hashing utility (`bcryptjs`)
+- [x] Implement `POST /v1/auth/register` (email + password)
+- [x] Implement `POST /v1/auth/login` (email + password → HttpOnly session cookie)
+- [x] Implement `POST /v1/auth/logout` (clears session)
+- [x] Implement `GET /v1/auth/me` (returns current user)
+- [x] Add session middleware (HttpOnly cookies, no JWT; `@fastify/cookie` + `@fastify/session`)
+- [x] Add password validation (min 8 chars)
 
 #### Projects Management
 
-- [ ] Implement `POST /v1/projects` — `{ name, provider }` → creates project + auto-generates API key
-- [ ] Implement `GET /v1/projects` — list user's projects (requires session)
-- [ ] Add project API key generation (`crypto.randomBytes(24).toString("hex")`)
-- [ ] Store API key hashed or plaintext in `Project.apiKey` field
+- [x] Implement `POST /v1/projects` — `{ name, provider }` → creates project + auto-generates API key
+- [x] Implement `GET /v1/projects` — list user's projects (requires session)
+- [x] Add project API key generation (`crypto.randomBytes(24).toString("hex")` → `mm_` prefix)
+- [x] Store API key plaintext in `Project.apiKey` field
 
 #### Auth Middleware
 
-- [ ] Add session auth middleware for dashboard/web routes (verifies session cookie)
-- [ ] Add `X-API-Key` middleware for agent-facing routes (`/messages`, `/memories/search`, `/graph`, `/memories/:id/explain`)
-- [ ] Add project lookup by API key + project ownership validation
-- [ ] Wire middleware into all existing core endpoints
+- [x] Add session auth middleware for dashboard/web routes (verifies session cookie)
+- [x] Add `X-API-Key` middleware for agent-facing routes (`/messages`, `/memories/search`, `/graph`, `/memories/:id/explain`)
+- [x] Add project lookup by API key + project ownership validation (cross-project access blocked)
+- [x] Wire middleware into all existing core endpoints via scoped Fastify plugin + preHandler hook
+- [x] Configure CORS (`@fastify/cors`) for web dev server origin (`WEB_ORIGIN` env var)
+- [x] Update `.env.example` with `SESSION_SECRET`, `OPENAI_API_KEY`, `WEB_ORIGIN`
 
-**3A Acceptance**: Can register → login → create project → see project list. Existing core endpoints now require `X-API-Key`. Ready to build the Playground.
+**3A Acceptance**: ✅ Can register → login → create project → see project list. Existing core endpoints now require `X-API-Key`. Ready to build the Playground.
 
 ---
 
@@ -230,60 +232,60 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 > **Strategy**: Build the Playground workbench first as the production-quality frontend (no throwaway code — uses TanStack Router + TanStack Query from day one). Validate the full core pipeline end-to-end in the UI before adding graph visualization and the full explorer.
 
-### 4A — Web App Setup
+### 4A — Web App Setup ✅
 
-- [ ] Initialize `apps/web` with Vite + React + TypeScript
-- [ ] Add TanStack Router (file-based routing)
-- [ ] Add TanStack Query (API data fetching + caching)
-- [ ] Add Tailwind CSS + base layout (sidebar nav, main content area)
-- [ ] Add API client utility (typed fetch wrapper pointing to `apps/api`)
-- [ ] Set up `apps/web` dev script (`vite`) + include in `pnpm dev`
-- [ ] Configure CORS on `apps/api` for web dev server origin
+- [x] Initialize `apps/web` with Vite + React + TypeScript
+- [x] Add TanStack Router (programmatic route tree)
+- [x] Add TanStack Query (API data fetching + caching)
+- [x] Add Tailwind CSS v4 (`@tailwindcss/vite` plugin)
+- [x] Add API client utility (`src/lib/api.ts` — typed fetch wrapper)
+- [x] Set up `apps/web` dev script (`vite`) + included in `pnpm dev`
+- [x] Add `typecheck` scripts to `apps/api`, `apps/web`, and root
 
-#### Auth Pages
+#### Auth Pages ✅
 
-- [ ] Login page (`/login`) — email + password → calls `POST /v1/auth/login`
-- [ ] Register page (`/register`) — calls `POST /v1/auth/register`
-- [ ] Protected route wrapper — redirects unauthenticated users to `/login`
-- [ ] Project list page (`/projects`) — calls `GET /v1/projects`, link to select a project
+- [x] Login page (`/login`) — email + password → calls `POST /v1/auth/login`
+- [x] Register page (`/register`) — calls `POST /v1/auth/register`
+- [x] Protected route wrapper (`beforeLoad` → `getMe()` → redirect to `/login` if unauthenticated)
+- [x] Project list page (`/projects`) — calls `GET /v1/projects`, link to select a project
 
-### 4B — Workbench Page (Playground core)
+### 4B — Workbench Page (Playground core) ✅
 
 > Route: `/projects/:projectId/workbench`
 
 **Layout**: Split-panel — left 40% ingest + extracted results, right 60% search + context pack.
 
-#### Left panel — Ingest
+#### Left panel — Ingest ✅
 
-- [ ] Message input (textarea + role selector: user / assistant / system)
-- [ ] Send button → calls `POST /messages` with project's API key
-- [ ] After send: show "Extracting..." spinner, then **auto-poll** `GET /memories` (recent facts) every 2s for up to 15s
-- [ ] Once facts appear (or polling timeout): render extracted facts list with confidence badges
-- [ ] Show entity tags per fact (from `entityMentions`)
-- [ ] Show message history (recent messages sent this session)
+- [x] Message input (textarea + role selector: user / assistant / system)
+- [x] Send button → calls `POST /messages` with project's API key
+- [x] After send: show "Extracting…" spinner, then **auto-poll** search every 2s for up to 15s
+- [x] Once facts appear (or polling timeout): render extracted facts list with confidence badges
+- [x] Show message history (recent messages sent this session)
 
-#### Right panel — Search + Context Pack
+#### Right panel — Search + Context Pack ✅
 
-- [ ] Search input → calls `POST /memories/search` on submit
-- [ ] Results list: ranked items with similarity score, recency boost, final score
-- [ ] Context pack section below results:
+- [x] Search input → calls `POST /memories/search` on submit
+- [x] Results list: ranked items with similarity score, recency boost, final score
+- [x] Context pack section below results:
   - Summary line (e.g., "Found 5 facts across 2 entities")
   - Facts grouped by entity (collapsible per entity)
   - Unattached facts section
-- [ ] Each fact row: click to open the Explain drawer (4C)
+- [x] Each fact row: click to open the Explain drawer (4C)
 
 **4B Acceptance**: Send "I am vegetarian" → facts appear in left panel within ~5s. Search "diet" → returns ranked results with contextPack grouping. Full pipeline visible in a single screen.
 
-### 4C — Explain Drawer
+### 4C — Explain Drawer ✅
 
 > Slide-in panel triggered by clicking any fact (in left panel or search results)
 
-- [ ] Calls `GET /memories/:memoryId/explain`
-- [ ] Shows: memory text, type, status (active / superseded badge), confidence
-- [ ] Shows: source message (evidence) — role + full content + timestamp
-- [ ] Shows: entity mentions (entity name + kind chips)
-- [ ] Shows: similar memories list (with status badges — active/superseded) — consolidation history
-- [ ] Keyboard shortcut to close (`Esc`)
+- [x] Calls `GET /memories/:memoryId/explain`
+- [x] Shows: memory text, type, status (active / superseded badge), confidence
+- [x] Shows: source message (evidence) — role + full content + timestamp
+- [x] Shows: entity mentions (entity name + kind chips)
+- [x] Shows: similar memories list (with status badges — active/superseded) — consolidation history
+- [x] Keyboard shortcut to close (`Esc`)
+- [x] Backdrop click to close
 
 **4C Acceptance**: Click any fact → drawer slides in showing its source message and consolidation history. Evidence loop is closed.
 
@@ -429,11 +431,11 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### Progress Tracking
 
-- Current phase: Phase 3 (Auth + Projects + Provider Keys)
+- Current phase: Phase 4 — Playground Acceptance Gate
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E ✅ | 2F ✅ | 2G ✅)
-- Phase 3: ⬜ Not started
-- Phase 4: ⬜ Not started
+- Phase 3: 🔄 In progress (3A ✅ | 3B ⬜)
+- Phase 4: 🔄 In progress (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ⬜ | 4D ⬜ | 4E ⬜)
 - Phase 5: ⬜ Not started
 - Phase 6: ⬜ Not started
 

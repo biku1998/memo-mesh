@@ -7,6 +7,7 @@
     "dev": "pnpm build:packages && pnpm --parallel --filter \"./apps/*\" dev",
     "build": "pnpm --recursive build",
     "build:packages": "pnpm --recursive --filter \"./packages/*\" build",
+    "typecheck": "pnpm --recursive --filter \"./apps/*\" --filter \"./packages/*\" typecheck",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "fmt": "oxfmt .",
