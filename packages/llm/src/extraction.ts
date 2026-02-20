@@ -1,8 +1,22 @@
 import { generateObject } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { getDecryptedProviderApiKey } from "@memo-mesh/db";
 import { ExtractionResult, type ExtractionResult as ExtractionResultType } from "@memo-mesh/shared";
 
-const extractionModel = openai("gpt-4o-mini");
+/**
+ * Resolves the OpenAI API key, preferring the encrypted DB value and
+ * falling back to the OPENAI_API_KEY env var (useful for local dev).
+ */
+async function getOpenAIApiKey(): Promise<string> {
+  const dbKey = await getDecryptedProviderApiKey("openai");
+  const key = dbKey ?? process.env.OPENAI_API_KEY;
+  if (!key) {
+    throw new Error(
+      "OpenAI API key not configured — set OPENAI_API_KEY env var or store it via PUT /v1/admin/provider-keys",
+    );
+  }
+  return key;
+}
 
 const EXTRACTION_PROMPT = `You are a knowledge extraction system. Given a user message, extract structured knowledge.
 
@@ -30,9 +44,10 @@ const EMPTY_EXTRACTION: ExtractionResultType = {
  * Attempt a single structured extraction call via the AI SDK.
  * Returns the validated ExtractionResult or throws on failure.
  */
-async function attemptExtraction(content: string): Promise<ExtractionResultType> {
+async function attemptExtraction(content: string, apiKey: string): Promise<ExtractionResultType> {
+  const model = createOpenAI({ apiKey })("gpt-4o-mini");
   const { object } = await generateObject({
-    model: extractionModel,
+    model,
     schema: ExtractionResult,
     prompt: `${EXTRACTION_PROMPT}\n\nMessage: "${content}"`,
   });
@@ -94,12 +109,12 @@ function repairAndParse(raw: unknown): ExtractionResultType | null {
  * 3. If repair fails: retry the LLM call once.
  * 4. If retry fails: return empty extraction (caller logs the error).
  */
-export async function extractKnowledge(
-  content: string,
-): Promise<ExtractionResultType> {
+export async function extractKnowledge(content: string): Promise<ExtractionResultType> {
+  const apiKey = await getOpenAIApiKey();
+
   // --- Attempt 1 ---
   try {
-    return await attemptExtraction(content);
+    return await attemptExtraction(content, apiKey);
   } catch (firstError: unknown) {
     // --- Attempt repair from raw response ---
     const repaired = repairAndParse(firstError);
@@ -107,7 +122,7 @@ export async function extractKnowledge(
 
     // --- Attempt 2 (retry once) ---
     try {
-      return await attemptExtraction(content);
+      return await attemptExtraction(content, apiKey);
     } catch {
       // Both attempts failed — return empty extraction so the pipeline continues.
       // The caller (messages route) logs the top-level error.
