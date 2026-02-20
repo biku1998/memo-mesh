@@ -5,6 +5,7 @@ import { CreateProjectBody } from "@memo-mesh/shared";
 
 export const projectRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /v1/projects — create a new project (requires session)
+  // Returns apiKey once at creation time.
   fastify.post("/v1/projects", async (request, reply) => {
     const userId = request.session.userId;
     if (!userId) {
@@ -32,7 +33,7 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // GET /v1/projects — list projects belonging to the authenticated user
+  // GET /v1/projects — list projects (no apiKey — use GET /projects/:id/api-key to fetch it)
   fastify.get("/v1/projects", async (request, reply) => {
     const userId = request.session.userId;
     if (!userId) {
@@ -42,7 +43,7 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
     const projects = await prisma.project.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
-      select: { id: true, name: true, provider: true, apiKey: true, createdAt: true },
+      select: { id: true, name: true, provider: true, createdAt: true },
     });
 
     return reply.send(
@@ -50,9 +51,29 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
         id: p.id,
         name: p.name,
         provider: p.provider,
-        apiKey: p.apiKey,
         createdAt: p.createdAt.toISOString(),
       })),
     );
+  });
+
+  // GET /v1/projects/:projectId/api-key — retrieve API key for a project (requires session + ownership)
+  fastify.get("/v1/projects/:projectId/api-key", async (request, reply) => {
+    const userId = request.session.userId;
+    if (!userId) {
+      return reply.status(401).send({ error: "Not authenticated" });
+    }
+
+    const { projectId } = request.params as { projectId: string };
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId },
+      select: { apiKey: true },
+    });
+
+    if (!project) {
+      return reply.status(404).send({ error: "Project not found" });
+    }
+
+    return reply.send({ apiKey: project.apiKey });
   });
 };

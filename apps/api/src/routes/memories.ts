@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { z } from "zod";
 import {
   prisma,
   findSimilarMemoriesByMemoryId,
@@ -6,22 +7,39 @@ import {
 } from "@memo-mesh/db";
 import { MemoryParams } from "@memo-mesh/shared";
 
+const MemoriesParams = z.object({
+  projectId: z.string().min(1, "projectId is required"),
+});
+
+const MemoriesQuery = z.object({
+  type: z.string().default("fact"),
+  status: z.string().default("active"),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+});
+
 export const memoryRoutes: FastifyPluginAsync = async (fastify) => {
   /**
    * GET /v1/projects/:projectId/memories?type=fact&status=active&limit=50
    * Returns recent memories for a project, newest first.
    */
   fastify.get("/memories", async (request, reply) => {
-    const parsedParams = (request.params as Record<string, string>);
-    const projectId = parsedParams.projectId;
-    if (!projectId) {
-      return reply.status(400).send({ error: "projectId is required" });
+    const parsedParams = MemoriesParams.safeParse(request.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: "Validation failed",
+        details: parsedParams.error.flatten().fieldErrors,
+      });
     }
+    const { projectId } = parsedParams.data;
 
-    const query = request.query as Record<string, string>;
-    const type = query.type ?? "fact";
-    const status = query.status ?? "active";
-    const limit = Math.min(Math.max(Number(query.limit ?? 50), 1), 200);
+    const parsedQuery = MemoriesQuery.safeParse(request.query);
+    if (!parsedQuery.success) {
+      return reply.status(400).send({
+        error: "Validation failed",
+        details: parsedQuery.error.flatten().fieldErrors,
+      });
+    }
+    const { type, status, limit } = parsedQuery.data;
 
     const memories = await prisma.memory.findMany({
       where: { projectId, type, status },

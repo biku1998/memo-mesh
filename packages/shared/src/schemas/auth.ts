@@ -25,11 +25,21 @@ export const CreateProjectBody = z.object({
 });
 export type CreateProjectBody = z.infer<typeof CreateProjectBody>;
 
-export const ProjectResponse = z.object({
+// Returned from POST /v1/projects (includes apiKey shown once at creation).
+export const CreateProjectResponse = z.object({
   id: z.string(),
   name: z.string(),
   provider: z.string(),
   apiKey: z.string(),
   createdAt: z.string(),
 });
-export type ProjectResponse = z.infer<typeof ProjectResponse>;
+export type CreateProjectResponse = z.infer<typeof CreateProjectResponse>;
+
+// Returned from GET /v1/projects (no apiKey — use GET /projects/:id/api-key).
+export const ProjectListItem = z.object({
+  id: z.string(),
+  name: z.string(),
+  provider: z.string(),
+  createdAt: z.string(),
+});
+export type ProjectListItem = z.infer<typeof ProjectListItem>;

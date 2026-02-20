@@ -3,6 +3,7 @@ import { useParams, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   getProjects,
+  getProjectApiKey,
   getMessages,
   getFactMemories,
   sendMessage,
@@ -48,14 +49,23 @@ function ExplainDrawer({
     <>
       {/* Backdrop */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-label="Close drawer"
         className="fixed inset-0 bg-black/20 z-40"
         onClick={onClose}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClose(); }}
       />
       {/* Drawer */}
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white border-l border-gray-200 shadow-xl z-50 overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-900">Memory Provenance</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+          >
             ✕
           </button>
         </div>
@@ -259,6 +269,8 @@ function IngestPanel({
   const [newFactIds, setNewFactIds] = useState<Set<string>>(new Set());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevFactCountRef = useRef<number | null>(null);
+  // Snapshot of fact IDs at send time — avoids stale closure inside the interval
+  const prevFactIdsRef = useRef<Set<string>>(new Set());
 
   // Load persisted messages from DB
   const { data: messages, refetch: refetchMessages } = useQuery({
@@ -277,8 +289,10 @@ function IngestPanel({
     onSuccess: () => {
       setContent("");
       refetchMessages();
-      // Record fact count before polling so we can highlight new ones
+      // Snapshot current fact IDs into a ref so the interval doesn't close over
+      // the stale `facts` React state variable.
       prevFactCountRef.current = facts?.length ?? 0;
+      prevFactIdsRef.current = new Set((facts ?? []).map((f) => f.memoryId));
       setNewFactIds(new Set());
       setPolling(true);
       const deadline = Date.now() + 15_000;
@@ -288,9 +302,8 @@ function IngestPanel({
           refetchFacts();
           // If new facts appeared, mark them and stop polling
           if (refreshed.length > (prevFactCountRef.current ?? 0)) {
-            const prevIds = new Set((facts ?? []).map((f) => f.memoryId));
             const freshIds = new Set(
-              refreshed.filter((f) => !prevIds.has(f.memoryId)).map((f) => f.memoryId),
+              refreshed.filter((f) => !prevFactIdsRef.current.has(f.memoryId)).map((f) => f.memoryId),
             );
             setNewFactIds(freshIds);
             clearInterval(pollRef.current!);
@@ -594,15 +607,21 @@ export function WorkbenchPage() {
   const { projectId } = useParams({ from: "/protected/projects/$projectId/workbench" });
   const [explainMemoryId, setExplainMemoryId] = useState<string | null>(null);
 
-  // Load project list to find the API key for this project
-  const { data: projects, isLoading, error } = useQuery({
+  const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: getProjects,
   });
 
-  const project = projects?.find((p) => p.id === projectId);
+  // Fetch API key separately — not included in the list response
+  const { data: keyData, isLoading: keyLoading } = useQuery({
+    queryKey: ["project-api-key", projectId],
+    queryFn: () => getProjectApiKey(projectId),
+  });
 
-  if (isLoading) {
+  const project = projects?.find((p) => p.id === projectId);
+  const apiKey = keyData?.apiKey;
+
+  if (projectsLoading || keyLoading) {
     return (
       <div className="flex h-screen items-center justify-center text-sm text-gray-500">
         Loading…
@@ -610,7 +629,7 @@ export function WorkbenchPage() {
     );
   }
 
-  if (error || !project) {
+  if (!project || !apiKey) {
     return (
       <div className="flex h-screen items-center justify-center text-sm text-red-500">
         Project not found.{" "}
@@ -630,9 +649,6 @@ export function WorkbenchPage() {
         </Link>
         <span className="text-gray-300">/</span>
         <h1 className="text-sm font-semibold text-gray-900">{project.name}</h1>
-        <span className="ml-auto text-xs font-mono bg-gray-100 text-gray-500 rounded px-2 py-1">
-          {project.apiKey.slice(0, 20)}…
-        </span>
       </header>
 
       {/* Split panels */}
@@ -641,7 +657,7 @@ export function WorkbenchPage() {
         <div className="w-2/5 border-r border-gray-200 bg-white overflow-hidden">
           <IngestPanel
             projectId={project.id}
-            apiKey={project.apiKey}
+            apiKey={apiKey}
             onExplain={setExplainMemoryId}
           />
         </div>
@@ -650,7 +666,7 @@ export function WorkbenchPage() {
         <div className="w-3/5 bg-white overflow-hidden">
           <SearchPanel
             projectId={project.id}
-            apiKey={project.apiKey}
+            apiKey={apiKey}
             onExplain={setExplainMemoryId}
           />
         </div>
@@ -661,7 +677,7 @@ export function WorkbenchPage() {
         <ExplainDrawer
           memoryId={explainMemoryId}
           projectId={project.id}
-          apiKey={project.apiKey}
+          apiKey={apiKey}
           onClose={() => setExplainMemoryId(null)}
         />
       )}

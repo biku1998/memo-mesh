@@ -6,12 +6,17 @@ import {
   supersedeMemory,
 } from "@memo-mesh/db";
 import { generateEmbedding, extractKnowledge } from "@memo-mesh/llm";
+import { z } from "zod";
 import {
   ProjectParams,
   CreateMessageBody,
   normalizeEntityName,
   type ExtractionResult,
 } from "@memo-mesh/shared";
+
+const GetMessagesQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
 
 async function processExtraction(
   projectId: string,
@@ -129,12 +134,21 @@ export const messageRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get("/messages", async (request, reply) => {
     const parsedParams = ProjectParams.safeParse(request.params);
     if (!parsedParams.success) {
-      return reply.status(400).send({ error: "Validation failed" });
+      return reply.status(400).send({
+        error: "Validation failed",
+        details: parsedParams.error.flatten().fieldErrors,
+      });
     }
     const { projectId } = parsedParams.data;
 
-    const query = request.query as Record<string, string>;
-    const limit = Math.min(Math.max(Number(query.limit ?? 20), 1), 100);
+    const parsedQuery = GetMessagesQuery.safeParse(request.query);
+    if (!parsedQuery.success) {
+      return reply.status(400).send({
+        error: "Validation failed",
+        details: parsedQuery.error.flatten().fieldErrors,
+      });
+    }
+    const { limit } = parsedQuery.data;
 
     const messages = await prisma.message.findMany({
       where: { projectId },

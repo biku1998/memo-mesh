@@ -9,6 +9,7 @@ export function ProjectsPage() {
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const { data: projects, isLoading, error } = useQuery({
     queryKey: ["projects"],
@@ -34,20 +35,28 @@ export function ProjectsPage() {
   });
 
   async function handleLogout() {
-    await logout();
-    navigate({ to: "/login" });
+    setLogoutError(null);
+    try {
+      await logout();
+      navigate({ to: "/login" });
+    } catch {
+      setLogoutError("Sign out failed — please try again.");
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <h1 className="text-lg font-semibold text-gray-900">Memo Mesh</h1>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center gap-3">
+          {logoutError && <span className="text-xs text-red-500">{logoutError}</span>}
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-10">
@@ -130,8 +139,8 @@ export function ProjectsPage() {
                       {p.provider} · Created {new Date(p.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className="text-xs font-mono bg-gray-100 text-gray-500 rounded px-2 py-1">
-                    {p.apiKey.slice(0, 16)}…
+                  <span className="text-xs bg-gray-100 text-gray-400 rounded px-2 py-1">
+                    Open →
                   </span>
                 </div>
               </Link>

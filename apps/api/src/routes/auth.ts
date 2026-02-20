@@ -4,6 +4,10 @@ import { prisma } from "@memo-mesh/db";
 import { RegisterBody, LoginBody } from "@memo-mesh/shared";
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
+  // Precomputed at plugin load to prevent timing attacks: login always
+  // calls bcrypt.compare regardless of whether the email exists.
+  const DUMMY_HASH = await bcrypt.hash("__dummy_timing_guard__", 12);
+
   // POST /v1/auth/register
   fastify.post("/v1/auth/register", async (request, reply) => {
     const parsed = RegisterBody.safeParse(request.body);
@@ -35,12 +39,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const { email, password } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return reply.status(401).send({ error: "Invalid email or password" });
-    }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) {
+    // Always call bcrypt.compare to prevent timing-based email enumeration.
+    const hash = user?.passwordHash ?? DUMMY_HASH;
+    const valid = await bcrypt.compare(password, hash);
+
+    if (!user || !valid) {
       return reply.status(401).send({ error: "Invalid email or password" });
     }
 

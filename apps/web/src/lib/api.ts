@@ -60,12 +60,17 @@ export function logout() {
 
 // --- Projects ---
 
+// List response: no apiKey (fetch separately via getProjectApiKey).
 export interface Project {
   id: string;
   name: string;
   provider: string;
-  apiKey: string;
   createdAt: string;
+}
+
+// Create response: includes apiKey shown once at creation.
+export interface CreatedProject extends Project {
+  apiKey: string;
 }
 
 export function getProjects() {
@@ -73,10 +78,14 @@ export function getProjects() {
 }
 
 export function createProject(name: string, provider: "openai" | "anthropic" = "openai") {
-  return request<Project>("/v1/projects", {
+  return request<CreatedProject>("/v1/projects", {
     method: "POST",
     body: JSON.stringify({ name, provider }),
   });
+}
+
+export function getProjectApiKey(projectId: string) {
+  return request<{ apiKey: string }>(`/v1/projects/${projectId}/api-key`);
 }
 
 // --- Messages (uses X-API-Key) ---
@@ -121,7 +130,7 @@ export function getFactMemories(projectId: string, apiKey: string, limit = 50) {
   );
 }
 
-// --- Memories ---
+// --- Search ---
 
 export interface SearchMemoryItem {
   memoryId: string;
@@ -171,25 +180,6 @@ export function searchMemories(
     headers: { "X-API-Key": apiKey },
     body: JSON.stringify({ query, k }),
   });
-}
-
-export interface RecentMemory {
-  memoryId: string;
-  text: string;
-  type: string;
-  confidence: number | null;
-  createdAt: string;
-}
-
-export function getRecentFacts(projectId: string, apiKey: string) {
-  return request<{ items: SearchMemoryItem[]; contextPack: ContextPack }>(
-    `/v1/projects/${projectId}/memories/search`,
-    {
-      method: "POST",
-      headers: { "X-API-Key": apiKey },
-      body: JSON.stringify({ query: "recent facts preferences", k: 20 }),
-    },
-  );
 }
 
 // --- Explain ---
