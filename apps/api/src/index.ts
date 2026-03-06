@@ -18,6 +18,7 @@ const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:5173";
 await fastify.register(fastifyCors, {
   origin: webOrigin,
   credentials: true,
+  methods: ["GET", "HEAD", "POST", "PUT", "DELETE"],
 });
 
 // --- Cookie + Session ---

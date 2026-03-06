@@ -657,6 +657,13 @@ export function WorkbenchPage() {
         </Link>
         <span className="text-gray-300">/</span>
         <h1 className="text-sm font-semibold text-gray-900">{project.name}</h1>
+        <Link
+          to="/projects/$projectId/graph"
+          params={{ projectId: project.id }}
+          className="ml-auto text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+        >
+          Knowledge Graph →
+        </Link>
       </header>
 
       {/* Split panels */}

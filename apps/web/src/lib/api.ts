@@ -226,4 +226,85 @@ export function explainMemory(projectId: string, apiKey: string, memoryId: strin
   });
 }
 
+// --- Provider Keys ---
+
+export interface ProviderKeyInfo {
+  provider: string;
+  maskedKey: string;
+  updatedAt: string;
+}
+
+export function getProviderKeys() {
+  return request<ProviderKeyInfo[]>("/v1/admin/provider-keys");
+}
+
+export function upsertProviderKey(provider: "openai" | "anthropic", key: string) {
+  return request<{ provider: string; updatedAt: string }>("/v1/admin/provider-keys", {
+    method: "PUT",
+    body: JSON.stringify({ provider, key }),
+  });
+}
+
+// --- Graph ---
+
+export interface GraphNode {
+  id: string;
+  name: string;
+  normalizedName: string;
+  kind: string;
+  createdAt: string;
+}
+
+export interface GraphEdge {
+  id: string;
+  subjectEntityId: string;
+  predicate: string;
+  objectEntityId: string;
+  confidence: number | null;
+  evidenceMemoryId: string | null;
+  createdAt: string;
+}
+
+export interface GraphResponse {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export function getGraph(projectId: string, apiKey: string, limit = 200) {
+  return request<GraphResponse>(
+    `/v1/projects/${projectId}/graph?limit=${limit}`,
+    { headers: { "X-API-Key": apiKey } },
+  );
+}
+
+export interface EntityRelation {
+  id: string;
+  predicate: string;
+  confidence: number;
+  target?: { id: string; name: string; kind: string };
+  source?: { id: string; name: string; kind: string };
+  evidence: { id: string; text: string; type: string } | null;
+}
+
+export interface EntityDetailResponse {
+  entity: GraphNode;
+  relations: {
+    outgoing: EntityRelation[];
+    incoming: EntityRelation[];
+  };
+  mentions: {
+    memoryId: string;
+    text: string;
+    type: string;
+    createdAt: string;
+  }[];
+}
+
+export function getEntityDetail(projectId: string, apiKey: string, entityId: string) {
+  return request<EntityDetailResponse>(
+    `/v1/projects/${projectId}/graph/entity/${entityId}`,
+    { headers: { "X-API-Key": apiKey } },
+  );
+}
+
 export { ApiError };

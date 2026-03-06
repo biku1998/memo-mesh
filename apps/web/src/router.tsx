@@ -10,6 +10,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { WorkbenchPage } from "./pages/WorkbenchPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { KnowledgeGraphPage } from "./pages/KnowledgeGraphPage";
 
 // Root layout — just renders children
 const rootRoute = createRootRoute({
@@ -57,6 +59,20 @@ const workbenchRoute = createRoute({
   component: WorkbenchPage,
 });
 
+// /projects/:projectId/graph
+const graphRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/projects/$projectId/graph",
+  component: KnowledgeGraphPage,
+});
+
+// /settings
+const settingsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/settings",
+  component: SettingsPage,
+});
+
 // Redirect / → /projects
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -70,7 +86,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
-  protectedRoute.addChildren([projectsRoute, workbenchRoute]),
+  protectedRoute.addChildren([projectsRoute, workbenchRoute, graphRoute, settingsRoute]),
 ]);
 
 export const router = createRouter({ routeTree });
