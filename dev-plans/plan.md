@@ -307,13 +307,13 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 > Route: `/settings`
 
-- [ ] Add `/settings` route to TanStack Router
-- [ ] Add "Settings" nav link in header/sidebar (visible when logged in)
-- [ ] Fetch current provider keys on mount (`GET /v1/admin/provider-keys`) — show masked key + last updated
-- [ ] Form with provider selector (openai / anthropic) + API key input
-- [ ] Submit → `PUT /v1/admin/provider-keys` → toast success/error
-- [ ] Show "Not configured" badge when no key is stored for a provider
-- [ ] Handle `503` gracefully (KEY_ENCRYPTION_SECRET not set on server)
+- [x] Add `/settings` route to TanStack Router
+- [x] Add "Settings" nav link in header/sidebar (visible when logged in)
+- [x] Fetch current provider keys on mount (`GET /v1/admin/provider-keys`) — show masked key + last updated
+- [x] Form with provider selector (openai / anthropic) + API key input
+- [x] Submit → `PUT /v1/admin/provider-keys` → toast success/error
+- [x] Show "Not configured" badge when no key is stored for a provider
+- [x] Handle `503` gracefully (KEY_ENCRYPTION_SECRET not set on server)
 
 **4D Acceptance**: Can navigate to /settings, see masked keys, set a new key, and confirm it appears masked after save.
 
@@ -321,12 +321,12 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 > Route: `/projects/:projectId/graph`
 
-- [ ] Install graph visualization library (Cytoscape.js recommended for quick ship)
-- [ ] Fetch graph data from `GET /graph`
-- [ ] Render interactive graph: entity nodes + relation edges
-- [ ] Click node → right side panel with entity details, outgoing/incoming relations, evidence memories
-- [ ] Color-code nodes by entity `kind` (person, organization, product, etc.)
-- [ ] Edge labels show relation predicate
+- [x] Install graph visualization library (Cytoscape.js recommended for quick ship)
+- [x] Fetch graph data from `GET /graph`
+- [x] Render interactive graph: entity nodes + relation edges
+- [x] Click node → right side panel with entity details, outgoing/incoming relations, evidence memories
+- [x] Color-code nodes by entity `kind` (person, organization, product, etc.)
+- [x] Edge labels show relation predicate
 
 ### 4F — Memory Explorer Page
 
@@ -445,11 +445,11 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### Progress Tracking
 
-- Current phase: Phase 4 — 4D Settings Page + 4E Knowledge Graph
+- Current phase: Phase 4 — 4F Memory Explorer
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E ✅ | 2F ✅ | 2G ✅)
 - Phase 3: ✅ Complete (3A ✅ | 3B ✅)
-- Phase 4: 🔄 In progress (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ✅ | 4D ⬜ | 4E ⬜ | 4F ⬜)
+- Phase 4: 🔄 In progress (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ✅ | 4D ✅ | 4E ✅ | 4F ⬜)
 - Phase 5: ⬜ Not started
 - Phase 6: ⬜ Not started
 
