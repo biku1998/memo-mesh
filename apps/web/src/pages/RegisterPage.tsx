@@ -47,8 +47,10 @@ export function RegisterPage() {
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <Input
               id="email"
+              name="email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
@@ -60,9 +62,11 @@ export function RegisterPage() {
             </label>
             <Input
               id="password"
+              name="password"
               type="password"
               required
               minLength={8}
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

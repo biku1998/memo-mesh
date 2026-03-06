@@ -56,13 +56,13 @@ function EntityPanel({
 
   if (isLoading) {
     return (
-      <div className="p-5 text-sm text-gray-500">Loading entity details…</div>
+      <div className="p-5 text-sm text-muted-foreground">Loading entity details…</div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="p-5 text-sm text-red-500">Failed to load entity.</div>
+      <div className="p-5 text-sm text-destructive">Failed to load entity.</div>
     );
   }
 
@@ -71,9 +71,9 @@ function EntityPanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-200 flex items-start justify-between">
+      <div className="px-5 py-4 border-b border-border flex items-start justify-between">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">{entity.name}</h2>
+          <h2 className="text-base font-semibold text-foreground">{entity.name}</h2>
           <span
             className="inline-block mt-1 text-xs font-medium rounded-full px-2 py-0.5 text-white"
             style={{ backgroundColor: getKindColor(entity.kind) }}
@@ -94,8 +94,8 @@ function EntityPanel({
             {relations.outgoing.map((r) => (
               <div key={r.id}>
                 <RelationRow>
-                  <span className="text-gray-500">{r.predicate}</span>
-                  <span className="mx-1 text-gray-300">→</span>
+                  <span className="text-muted-foreground">{r.predicate}</span>
+                  <span className="mx-1 text-muted-foreground/40">→</span>
                   <Button variant="link" size="sm" onClick={() => r.target && onNavigate(r.target.id)}>
                     {r.target?.name}
                   </Button>
@@ -116,8 +116,8 @@ function EntityPanel({
                   <Button variant="link" size="sm" onClick={() => r.source && onNavigate(r.source.id)}>
                     {r.source?.name}
                   </Button>
-                  <span className="mx-1 text-gray-300">→</span>
-                  <span className="text-gray-500">{r.predicate}</span>
+                  <span className="mx-1 text-muted-foreground/40">→</span>
+                  <span className="text-muted-foreground">{r.predicate}</span>
                   <ConfidenceBadge value={r.confidence} />
                 </RelationRow>
                 {r.evidence && <EvidenceSnippet text={r.evidence.text} type={r.evidence.type} />}
@@ -133,10 +133,10 @@ function EntityPanel({
               {mentions.map((m) => (
                 <li
                   key={m.memoryId}
-                  className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-700"
+                  className="bg-muted px-3 py-2 text-xs text-foreground"
                 >
                   <p>{m.text}</p>
-                  <p className="text-gray-400 mt-1">
+                  <p className="text-muted-foreground mt-1">
                     {m.type} · {new Date(m.createdAt).toLocaleString()}
                   </p>
                 </li>
@@ -148,7 +148,7 @@ function EntityPanel({
         {relations.outgoing.length === 0 &&
           relations.incoming.length === 0 &&
           mentions.length === 0 && (
-            <p className="text-gray-400 text-center py-6">
+            <p className="text-muted-foreground text-center py-6">
               No relations or mentions found for this entity.
             </p>
           )}
@@ -160,7 +160,7 @@ function EntityPanel({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
         {title}
       </h3>
       {children}
@@ -174,7 +174,7 @@ function RelationRow({ children }: { children: React.ReactNode }) {
 
 function ConfidenceBadge({ value }: { value: number }) {
   return (
-    <span className="ml-auto text-[10px] text-gray-400 bg-gray-100 rounded px-1.5 py-0.5">
+    <span className="ml-auto text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5">
       {Math.round(value * 100)}%
     </span>
   );
@@ -182,7 +182,7 @@ function ConfidenceBadge({ value }: { value: number }) {
 
 function EvidenceSnippet({ text, type }: { text: string; type: string }) {
   return (
-    <p className="ml-4 mb-1 text-[11px] text-gray-400 italic truncate" title={text}>
+    <p className="ml-4 mb-1 text-[11px] text-muted-foreground italic truncate" title={text}>
       {type}: {text}
     </p>
   );
@@ -193,14 +193,14 @@ function EvidenceSnippet({ text, type }: { text: string; type: string }) {
 function Legend({ kinds }: { kinds: string[] }) {
   if (kinds.length === 0) return null;
   return (
-    <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur rounded-lg border border-gray-200 px-3 py-2 flex flex-wrap gap-3 text-xs z-10">
+    <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur border border-border px-3 py-2 flex flex-wrap gap-3 text-xs z-10">
       {kinds.map((kind) => (
         <span key={kind} className="flex items-center gap-1.5">
           <span
             className="inline-block w-3 h-3 rounded-full"
             style={{ backgroundColor: getKindColor(kind) }}
           />
-          <span className="text-gray-600 capitalize">{kind}</span>
+          <span className="text-muted-foreground capitalize">{kind}</span>
         </span>
       ))}
     </div>
@@ -378,9 +378,9 @@ export function KnowledgeGraphPage() {
 
   if (!project) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-gray-500">
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
         Project not found.{" "}
-        <Link to="/projects" className="ml-2 text-indigo-500 underline">
+        <Link to="/projects" className="ml-2 text-foreground underline">
           Back to projects
         </Link>
       </div>
@@ -417,17 +417,17 @@ export function KnowledgeGraphPage() {
         {/* Graph area */}
         <div className="flex-1 relative">
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
               Loading graph…
             </div>
           )}
           {error && (
-            <div className="absolute inset-0 flex items-center justify-center text-sm text-red-500">
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-destructive">
               Failed to load graph data.
             </div>
           )}
           {graphData && graphData.nodes.length === 0 && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 text-sm">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground text-sm">
               <p className="text-lg mb-1">No entities yet</p>
               <p>Send some messages in the workbench to populate the graph.</p>
             </div>
@@ -438,7 +438,7 @@ export function KnowledgeGraphPage() {
 
         {/* Side panel */}
         {selectedEntityId && apiKey && (
-          <div className="w-80 border-l border-gray-200 bg-white overflow-hidden">
+          <div className="w-80 border-l border-border bg-card overflow-hidden">
             <EntityPanel
               projectId={projectId}
               apiKey={apiKey}

@@ -186,7 +186,7 @@ function FactCard({
   onExplain: (memoryId: string) => void;
 }) {
   return (
-    <Card size="sm" className="transition-colors hover:ring-primary/30">
+    <Card size="sm" className="transition-colors hover:ring-foreground/20">
       <CardContent>
         <p className="text-sm text-card-foreground leading-relaxed">{fact.text}</p>
         <div className="mt-1.5 flex items-center gap-2">
@@ -218,13 +218,13 @@ function FactMemoryCard({
       size="sm"
       className={`transition-colors ${
         isNew
-          ? "ring-primary/30 bg-primary/5"
-          : "hover:ring-primary/30"
+          ? "ring-foreground/20 bg-accent"
+          : "hover:ring-foreground/20"
       }`}
     >
       <CardContent>
         {isNew && (
-          <span className="inline-block mb-1 text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5">
+          <span className="inline-block mb-1 text-xs font-medium text-foreground bg-accent px-1.5 py-0.5">
             New
           </span>
         )}
@@ -651,7 +651,7 @@ export function WorkbenchPage() {
         <Link
           to="/projects/$projectId/graph"
           params={{ projectId: project.id }}
-          className="ml-auto text-xs text-primary hover:text-primary/80 font-medium"
+          className="ml-auto text-xs text-muted-foreground hover:text-foreground font-medium"
         >
           Knowledge Graph →
         </Link>

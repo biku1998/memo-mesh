@@ -91,7 +91,7 @@ export function ConfirmationDialog({
         {/* Warning banner */}
         {warning && (
           <div className="px-6 py-4 border-b border-border">
-            <div className="flex items-center gap-2 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-center gap-2 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               <AlertCircle className="size-4 shrink-0" />
               {warning}
             </div>

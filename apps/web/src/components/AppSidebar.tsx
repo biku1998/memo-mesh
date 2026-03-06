@@ -9,6 +9,7 @@ import { useState } from "react";
 import { logout } from "../lib/api";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 function NavIcon({
   to,
@@ -48,8 +49,9 @@ export function AppSidebar() {
     try {
       await logout();
       navigate({ to: "/login" });
-    } catch {
-      // silently fail — user can retry
+    } catch (e) {
+      toast.error("Logout failed — please try again.");
+      console.error("Logout failed:", e);
     }
   }
 

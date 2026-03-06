@@ -70,7 +70,7 @@ export function ProjectsPage() {
                 <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
                   {createMutation.isPending ? "Creating…" : "Create"}
                 </Button>
-                <Button variant="outline" type="button" onClick={() => setCreating(false)}>
+                <Button variant="outline" type="button" onClick={() => { setCreating(false); setName(""); setFormError(null); }}>
                   Cancel
                 </Button>
               </div>
@@ -102,7 +102,7 @@ export function ProjectsPage() {
               params={{ projectId: p.id }}
               className="block"
             >
-              <Card className="transition-all hover:ring-primary/30 hover:shadow-sm">
+              <Card className="transition-all hover:ring-foreground/20 hover:shadow-sm">
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>

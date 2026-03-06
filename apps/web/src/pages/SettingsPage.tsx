@@ -129,7 +129,7 @@ export function SettingsPage() {
                     <span
                       className={`text-xs px-2 py-0.5 font-medium ${
                         info
-                          ? "bg-primary/10 text-primary"
+                          ? "bg-accent text-foreground"
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
@@ -159,7 +159,7 @@ export function SettingsPage() {
             </div>
 
             {saveSuccess && (
-              <div className="bg-primary/10 text-primary px-3 py-2 text-sm">
+              <div className="bg-accent text-foreground px-3 py-2 text-sm">
                 Key saved successfully.
               </div>
             )}
