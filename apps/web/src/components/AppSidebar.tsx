@@ -1,4 +1,5 @@
 import { Link, useMatchRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   BoxesIcon,
   FolderOpenIcon,
@@ -47,16 +48,18 @@ function NavIcon({
 
 export function AppSidebar() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
-  async function handleLogout() {
-    try {
-      await logout();
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
       navigate({ to: "/login" });
-    } catch (e) {
+    },
+    onError: () => {
       toast.error("Logout failed — please try again.");
-      console.error("Logout failed:", e);
-    }
-  }
+    },
+  });
 
   return (
     <aside className="flex flex-col items-center w-14 shrink-0 border-r border-border bg-card py-3 gap-1">
@@ -93,7 +96,7 @@ export function AppSidebar() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="right" align="end">
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
               <LogOutIcon className="size-3.5" />
               Sign out
             </DropdownMenuItem>
