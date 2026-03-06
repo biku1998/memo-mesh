@@ -40,6 +40,27 @@ export const providerKeyRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
+  // DELETE /v1/admin/provider-keys/:provider — remove a provider API key
+  fastify.delete("/v1/admin/provider-keys/:provider", async (request, reply) => {
+    const userId = request.session.userId;
+    if (!userId) {
+      return reply.status(401).send({ error: "Not authenticated" });
+    }
+
+    const { provider } = request.params as { provider: string };
+    if (!["openai", "anthropic"].includes(provider)) {
+      return reply.status(400).send({ error: "Invalid provider" });
+    }
+
+    const existing = await prisma.providerKey.findUnique({ where: { provider } });
+    if (!existing) {
+      return reply.status(404).send({ error: "Provider key not found" });
+    }
+
+    await prisma.providerKey.delete({ where: { provider } });
+    return reply.send({ ok: true });
+  });
+
   // GET /v1/admin/provider-keys — list stored provider keys (masked)
   fastify.get("/v1/admin/provider-keys", async (request, reply) => {
     const userId = request.session.userId;

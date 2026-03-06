@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Select } from "../components/Select";
 import {
   getProjects,
   getProjectApiKey,
@@ -349,15 +350,17 @@ function IngestPanel({
         {/* Input form */}
         <form onSubmit={handleSubmit} className="space-y-2">
           <div className="flex gap-2 items-center">
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as typeof role)}
-              className="rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="user">user</option>
-              <option value="assistant">assistant</option>
-              <option value="system">system</option>
-            </select>
+            <div className="w-32">
+              <Select
+                value={role}
+                onValueChange={(v) => setRole(v as typeof role)}
+                options={[
+                  { value: "user", label: "User" },
+                  { value: "assistant", label: "Assistant" },
+                  { value: "system", label: "System" },
+                ]}
+              />
+            </div>
             <span className="text-xs text-gray-400">Role</span>
           </div>
           <textarea
