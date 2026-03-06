@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { register, ApiError } from "../lib/api";
+import { Button } from "../components/Button";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -68,13 +69,9 @@ export function RegisterPage() {
               placeholder="••••••••"
             />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Creating account…" : "Create account"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-500">

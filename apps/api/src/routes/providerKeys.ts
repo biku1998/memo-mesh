@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { prisma, encrypt, decrypt } from "@memo-mesh/db";
-import { UpsertProviderKeyBody } from "@memo-mesh/shared";
+import { UpsertProviderKeyBody, DeleteProviderKeyParams } from "@memo-mesh/shared";
 
 function maskKey(key: string): string {
   if (key.length <= 8) return "*".repeat(key.length);
@@ -47,17 +47,17 @@ export const providerKeyRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(401).send({ error: "Not authenticated" });
     }
 
-    const { provider } = request.params as { provider: string };
-    if (!["openai", "anthropic"].includes(provider)) {
+    const parsed = DeleteProviderKeyParams.safeParse(request.params);
+    if (!parsed.success) {
       return reply.status(400).send({ error: "Invalid provider" });
     }
+    const { provider } = parsed.data;
 
-    const existing = await prisma.providerKey.findUnique({ where: { provider } });
-    if (!existing) {
+    const { count } = await prisma.providerKey.deleteMany({ where: { provider } });
+    if (count === 0) {
       return reply.status(404).send({ error: "Provider key not found" });
     }
 
-    await prisma.providerKey.delete({ where: { provider } });
     return reply.send({ ok: true });
   });
 

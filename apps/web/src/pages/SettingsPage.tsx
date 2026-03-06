@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getProviderKeys, upsertProviderKey, deleteProviderKey, ApiError } from "../lib/api";
 import { Select } from "../components/Select";
+import { Button } from "../components/Button";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { toast } from "sonner";
 
@@ -130,13 +131,14 @@ export function SettingsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {info && (
-                      <button
+                      <Button
+                        variant="danger-ghost"
+                        size="sm"
                         onClick={() => setConfirmDelete(p)}
                         disabled={deleting === p}
-                        className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50"
                       >
                         {deleting === p ? "Removing…" : "Remove"}
-                      </button>
+                      </Button>
                     )}
                     <span
                       className={`text-xs rounded-full px-2 py-0.5 font-medium ${
@@ -218,13 +220,9 @@ export function SettingsPage() {
               </div>
 
               <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={saving || !apiKey.trim()}
-                  className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                >
+                <Button type="submit" disabled={saving || !apiKey.trim()}>
                   {saving ? "Saving…" : getKeyInfo(provider) ? "Update key" : "Save key"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

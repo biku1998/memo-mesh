@@ -14,10 +14,13 @@
     "@radix-ui/react-select": "^2.2.6",
     "@tanstack/react-query": "^5.80.7",
     "@tanstack/react-router": "^1.122.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "cytoscape": "^3.33.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.10",

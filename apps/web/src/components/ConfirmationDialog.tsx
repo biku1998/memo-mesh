@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import { Button } from "./Button";
 
 interface ConfirmationInput {
   label: string;
@@ -43,12 +44,6 @@ export function ConfirmationDialog({
     !confirmations ||
     confirmations.every((c, i) => inputs[i] === c.value);
 
-  const isDanger = variant === "danger";
-
-  const confirmBtnClass = isDanger
-    ? "bg-red-600 hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300 disabled:hover:bg-red-300"
-    : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:hover:bg-indigo-300";
-
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
@@ -69,10 +64,11 @@ export function ConfirmationDialog({
               <div className="px-6 py-4 border-b border-gray-200 space-y-4">
                 {confirmations.map((c, i) => (
                   <div key={i}>
-                    <label className="block text-sm text-gray-700 mb-1.5">
+                    <label htmlFor={`confirm-${i}`} className="block text-sm text-gray-700 mb-1.5">
                       To confirm, type &ldquo;<span className="font-semibold">{c.value}</span>&rdquo;
                     </label>
                     <input
+                      id={`confirm-${i}`}
                       type="text"
                       value={inputs[i] ?? ""}
                       onChange={(e) => {
@@ -99,15 +95,17 @@ export function ConfirmationDialog({
 
             {/* Actions */}
             <div className="px-6 py-4 flex items-center justify-between">
-              <AlertDialog.Cancel className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1">
-                {cancelLabel}
+              <AlertDialog.Cancel asChild>
+                <Button variant="outline">{cancelLabel}</Button>
               </AlertDialog.Cancel>
-              <AlertDialog.Action
-                disabled={!allConfirmed}
-                onClick={onConfirm}
-                className={`rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed ${confirmBtnClass}`}
-              >
-                {confirmLabel}
+              <AlertDialog.Action asChild disabled={!allConfirmed}>
+                <Button
+                  variant={variant === "danger" ? "destructive" : "primary"}
+                  disabled={!allConfirmed}
+                  onClick={onConfirm}
+                >
+                  {confirmLabel}
+                </Button>
               </AlertDialog.Action>
             </div>
           </AlertDialog.Content>
