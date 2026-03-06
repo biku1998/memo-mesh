@@ -328,16 +328,16 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 - [x] Color-code nodes by entity `kind` (person, organization, product, etc.)
 - [x] Edge labels show relation predicate
 
-### 4F — Memory Explorer Page
+### 4F — Memory Explorer Page ✅
 
 > Route: `/projects/:projectId/memories`
 
-- [ ] Implement `GET /v1/projects/:projectId/memories?type=fact&status=active&cursor=...` API endpoint
-- [ ] Paginated list of memories (cursor-based)
-- [ ] Filter by type (`fact`, `raw`) and status (`active`, `superseded`)
-- [ ] Show facts with confidence + createdAt
-- [ ] Click row → opens Explain drawer (reuse 4C component)
-- [ ] "Evidence" icon on every fact row
+- [x] Implement `GET /v1/projects/:projectId/dashboard/memories` API endpoint (session-auth, cursor-based pagination)
+- [x] Paginated list of memories (cursor-based, load more)
+- [x] Filter by type (`fact`, `raw`) and status (`active`, `superseded`)
+- [x] Show facts with confidence + createdAt
+- [x] Click row → opens Explain drawer (reuse 4C component)
+- [x] Extract `ExplainDrawer` + `StatusBadge` to shared component (`components/ExplainDrawer.tsx`)
 
 **Phase 4 Acceptance**: Full dashboard working — workbench, explain, graph, memory explorer, settings. All data authenticated. Evidence visible everywhere.
 
@@ -445,11 +445,11 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### Progress Tracking
 
-- Current phase: Phase 4 — 4F Memory Explorer
+- Current phase: Phase 5 — MCP Server
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete (2A ✅ | 2B ✅ | 2C ✅ | 2D ✅ | 2E ✅ | 2F ✅ | 2G ✅)
 - Phase 3: ✅ Complete (3A ✅ | 3B ✅)
-- Phase 4: 🔄 In progress (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ✅ | 4D ✅ | 4E ✅ | 4F ⬜)
+- Phase 4: ✅ Complete (4A ✅ | 4B ✅ | 4C ✅ | Playground Gate ✅ | 4D ✅ | 4E ✅ | 4F ✅)
 - Phase 5: ⬜ Not started
 - Phase 6: ⬜ Not started
 

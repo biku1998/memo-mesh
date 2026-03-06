@@ -226,6 +226,13 @@ export function explainMemory(projectId: string, apiKey: string, memoryId: strin
   });
 }
 
+// Session-auth version — no API key required, for use in dashboard pages
+export function explainMemoryDashboard(projectId: string, memoryId: string) {
+  return request<ExplainResponse>(
+    `/v1/projects/${projectId}/dashboard/memories/${memoryId}/explain`,
+  );
+}
+
 // --- Provider Keys ---
 
 export interface ProviderKeyInfo {
@@ -310,6 +317,29 @@ export function getEntityDetail(projectId: string, apiKey: string, entityId: str
   return request<EntityDetailResponse>(
     `/v1/projects/${projectId}/graph/entity/${entityId}`,
     { headers: { "X-API-Key": apiKey } },
+  );
+}
+
+// --- Dashboard Memories (session-auth, no API key) ---
+
+export interface MemoryListResponse {
+  memories: FactMemory[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export function getMemories(
+  projectId: string,
+  params?: { type?: string; status?: string; cursor?: string; limit?: number },
+): Promise<MemoryListResponse> {
+  const qs = new URLSearchParams();
+  if (params?.type) qs.set("type", params.type);
+  if (params?.status) qs.set("status", params.status);
+  if (params?.cursor) qs.set("cursor", params.cursor);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const query = qs.toString();
+  return request<MemoryListResponse>(
+    `/v1/projects/${projectId}/dashboard/memories${query ? `?${query}` : ""}`,
   );
 }
 
