@@ -12,6 +12,7 @@ import { ProjectsPage } from "./pages/ProjectsPage";
 import { WorkbenchPage } from "./pages/WorkbenchPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { KnowledgeGraphPage } from "./pages/KnowledgeGraphPage";
+import { AppSidebar } from "./components/AppSidebar";
 
 // Root layout — just renders children
 const rootRoute = createRootRoute({
@@ -42,7 +43,14 @@ const protectedRoute = createRoute({
       throw redirect({ to: "/login" });
     }
   },
-  component: () => <Outlet />,
+  component: () => (
+    <div className="flex h-screen overflow-hidden">
+      <AppSidebar />
+      <main className="flex-1 overflow-auto">
+        <Outlet />
+      </main>
+    </div>
+  ),
 });
 
 // /projects

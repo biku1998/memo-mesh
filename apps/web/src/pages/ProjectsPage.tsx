@@ -1,16 +1,16 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { getProjects, createProject, logout, ApiError } from "../lib/api";
-import { Button } from "../components/Button";
+import { Link } from "@tanstack/react-router";
+import { getProjects, createProject, ApiError } from "../lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 export function ProjectsPage() {
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const { data: projects, isLoading, error } = useQuery({
     queryKey: ["projects"],
@@ -35,109 +35,92 @@ export function ProjectsPage() {
     },
   });
 
-  async function handleLogout() {
-    setLogoutError(null);
-    try {
-      await logout();
-      navigate({ to: "/login" });
-    } catch {
-      setLogoutError("Sign out failed — please try again.");
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Memo Mesh</h1>
-        <div className="flex items-center gap-4">
-          {logoutError && <span className="text-xs text-red-500">{logoutError}</span>}
-          <Link to="/settings" className="text-sm text-gray-500 hover:text-gray-700">
-            Settings
-          </Link>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            Sign out
-          </Button>
-        </div>
-      </header>
+    <div className="max-w-2xl mx-auto px-6 py-10">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-foreground">Your Projects</h2>
+        <Button onClick={() => { setCreating(true); setFormError(null); }}>
+          New project
+        </Button>
+      </div>
 
-      <main className="max-w-2xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Your Projects</h2>
-          <Button onClick={() => { setCreating(true); setFormError(null); }}>
-            New project
-          </Button>
-        </div>
-
-        {creating && (
-          <form
-            onSubmit={(e: FormEvent) => { e.preventDefault(); createMutation.mutate(); }}
-            className="mb-6 bg-white rounded-xl border border-gray-200 p-4 space-y-3"
-          >
-            <p className="text-sm font-medium text-gray-700">Create new project</p>
-            {formError && (
-              <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
-                {formError}
-              </div>
-            )}
-            <div className="flex gap-2">
-              <input
-                autoFocus
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Project name"
-                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
-                {createMutation.isPending ? "Creating…" : "Create"}
-              </Button>
-              <Button variant="outline" type="button" onClick={() => setCreating(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {isLoading && (
-          <div className="text-sm text-gray-500 py-8 text-center">Loading projects…</div>
-        )}
-
-        {error && (
-          <div className="text-sm text-red-600 py-4">Failed to load projects.</div>
-        )}
-
-        {projects && projects.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            <p className="text-lg mb-1">No projects yet</p>
-            <p className="text-sm">Create your first project to get started.</p>
-          </div>
-        )}
-
-        <ul className="space-y-3">
-          {projects?.map((p) => (
-            <li key={p.id}>
-              <Link
-                to="/projects/$projectId/workbench"
-                params={{ projectId: p.id }}
-                className="block bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{p.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {p.provider} · Created {new Date(p.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="text-xs bg-gray-100 text-gray-400 rounded px-2 py-1">
-                    Open →
-                  </span>
+      {creating && (
+        <Card className="mb-6">
+          <CardContent>
+            <form
+              onSubmit={(e: FormEvent) => { e.preventDefault(); createMutation.mutate(); }}
+              className="space-y-3"
+            >
+              <p className="text-sm font-medium text-card-foreground">Create new project</p>
+              {formError && (
+                <div className="bg-destructive/10 text-destructive px-3 py-2 text-sm">
+                  {formError}
                 </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </main>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  autoFocus
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Project name"
+                  className="flex-1"
+                />
+                <Button type="submit" disabled={createMutation.isPending || !name.trim()}>
+                  {createMutation.isPending ? "Creating…" : "Create"}
+                </Button>
+                <Button variant="outline" type="button" onClick={() => { setCreating(false); setName(""); setFormError(null); }}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {isLoading && (
+        <div className="text-sm text-muted-foreground py-8 text-center">Loading projects…</div>
+      )}
+
+      {error && (
+        <div className="text-sm text-destructive py-4">Failed to load projects.</div>
+      )}
+
+      {projects && projects.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <p className="text-lg mb-1">No projects yet</p>
+          <p className="text-sm">Create your first project to get started.</p>
+        </div>
+      )}
+
+      <ul className="space-y-3">
+        {projects?.map((p) => (
+          <li key={p.id}>
+            <Link
+              to="/projects/$projectId/workbench"
+              params={{ projectId: p.id }}
+              className="block"
+            >
+              <Card className="transition-all hover:ring-foreground/20 hover:shadow-sm">
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-card-foreground">{p.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {p.provider} · Created {new Date(p.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span className="text-xs bg-muted text-muted-foreground px-2 py-1">
+                      Open →
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
