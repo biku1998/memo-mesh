@@ -21,3 +21,9 @@
 ## UI components
 
 - Use shadcn/ui for all UI components — it is configured in `apps/web`. Do not build custom components for anything shadcn already covers (buttons, inputs, dialogs, cards, tables, etc.). Check the shadcn registry before building anything from scratch.
+
+## Context and Progress
+
+For context read the `README.md` to understand what this project is about if needed, Not necessary for every session or interaction.
+
+And for plan and how we are implementing it read `dev-plans/plan.md`, again same thing only read if needed, Not necessary for every session or interaction.
