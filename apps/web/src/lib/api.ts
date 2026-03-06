@@ -313,4 +313,27 @@ export function getEntityDetail(projectId: string, apiKey: string, entityId: str
   );
 }
 
+// --- Dashboard Memories (session-auth, no API key) ---
+
+export interface MemoryListResponse {
+  memories: FactMemory[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export function getMemories(
+  projectId: string,
+  params?: { type?: string; status?: string; cursor?: string; limit?: number },
+): Promise<MemoryListResponse> {
+  const qs = new URLSearchParams();
+  if (params?.type) qs.set("type", params.type);
+  if (params?.status) qs.set("status", params.status);
+  if (params?.cursor) qs.set("cursor", params.cursor);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const query = qs.toString();
+  return request<MemoryListResponse>(
+    `/v1/projects/${projectId}/dashboard/memories${query ? `?${query}` : ""}`,
+  );
+}
+
 export { ApiError };

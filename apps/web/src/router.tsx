@@ -12,6 +12,7 @@ import { ProjectsPage } from "./pages/ProjectsPage";
 import { WorkbenchPage } from "./pages/WorkbenchPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { KnowledgeGraphPage } from "./pages/KnowledgeGraphPage";
+import { MemoryExplorerPage } from "./pages/MemoryExplorerPage";
 import { AppSidebar } from "./components/AppSidebar";
 
 // Root layout — just renders children
@@ -74,6 +75,13 @@ const graphRoute = createRoute({
   component: KnowledgeGraphPage,
 });
 
+// /projects/:projectId/memories
+const memoriesRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/projects/$projectId/memories",
+  component: MemoryExplorerPage,
+});
+
 // /settings
 const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -94,7 +102,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
-  protectedRoute.addChildren([projectsRoute, workbenchRoute, graphRoute, settingsRoute]),
+  protectedRoute.addChildren([projectsRoute, workbenchRoute, graphRoute, memoriesRoute, settingsRoute]),
 ]);
 
 export const router = createRouter({ routeTree });

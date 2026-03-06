@@ -405,11 +405,20 @@ export function KnowledgeGraphPage() {
         <span className="text-muted-foreground/40">/</span>
         <h1 className="text-xs font-semibold text-foreground">Knowledge Graph</h1>
 
-        {graphData && (
-          <span className="ml-auto text-xs text-muted-foreground">
-            {graphData.nodes.length} entities · {graphData.edges.length} relations
-          </span>
-        )}
+        <div className="ml-auto flex items-center gap-4">
+          <Link
+            to="/projects/$projectId/memories"
+            params={{ projectId }}
+            className="text-xs text-muted-foreground hover:text-foreground font-medium"
+          >
+            Memories →
+          </Link>
+          {graphData && (
+            <span className="text-xs text-muted-foreground">
+              {graphData.nodes.length} entities · {graphData.edges.length} relations
+            </span>
+          )}
+        </div>
       </header>
 
       {/* Content */}

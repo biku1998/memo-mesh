@@ -9,6 +9,7 @@ import { messageRoutes } from "./routes/messages.js";
 import { searchRoutes } from "./routes/search.js";
 import { graphRoutes } from "./routes/graph.js";
 import { memoryRoutes } from "./routes/memories.js";
+import { dashboardMemoryRoutes } from "./routes/dashboardMemories.js";
 import { requireApiKey } from "./middleware/apiKey.js";
 
 const fastify = Fastify({ logger: true });
@@ -47,6 +48,7 @@ fastify.get("/health", () => ({ status: "ok" }));
 fastify.register(authRoutes);
 fastify.register(projectRoutes);
 fastify.register(providerKeyRoutes);
+fastify.register(dashboardMemoryRoutes);
 
 // --- Core routes (require X-API-Key) ---
 const API_PREFIX = "/v1/projects/:projectId";
