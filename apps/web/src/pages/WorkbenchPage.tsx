@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Select } from "../components/Select";
-import { Button } from "../components/Button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   getProjects,
   getProjectApiKey,
@@ -183,19 +186,21 @@ function FactCard({
   onExplain: (memoryId: string) => void;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 hover:border-indigo-300 transition-colors">
-      <p className="text-sm text-gray-800 leading-relaxed">{fact.text}</p>
-      <div className="mt-1.5 flex items-center gap-2">
-        {fact.confidence != null && (
-          <span className="text-xs text-gray-400">
-            {(fact.confidence * 100).toFixed(0)}% conf
-          </span>
-        )}
-        <Button variant="link" size="sm" className="ml-auto" onClick={() => onExplain(fact.memoryId)}>
-          Explain →
-        </Button>
-      </div>
-    </div>
+    <Card size="sm" className="transition-colors hover:ring-primary/30">
+      <CardContent>
+        <p className="text-sm text-card-foreground leading-relaxed">{fact.text}</p>
+        <div className="mt-1.5 flex items-center gap-2">
+          {fact.confidence != null && (
+            <span className="text-xs text-muted-foreground">
+              {(fact.confidence * 100).toFixed(0)}% conf
+            </span>
+          )}
+          <Button variant="link" size="sm" className="ml-auto" onClick={() => onExplain(fact.memoryId)}>
+            Explain →
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -209,34 +214,37 @@ function FactMemoryCard({
   onExplain: (memoryId: string) => void;
 }) {
   return (
-    <div
-      className={`rounded-lg border px-3 py-2.5 transition-colors ${
+    <Card
+      size="sm"
+      className={`transition-colors ${
         isNew
-          ? "border-indigo-300 bg-indigo-50"
-          : "border-gray-200 bg-white hover:border-indigo-300"
+          ? "ring-primary/30 bg-primary/5"
+          : "hover:ring-primary/30"
       }`}
     >
-      {isNew && (
-        <span className="inline-block mb-1 text-xs font-medium text-indigo-600 bg-indigo-100 rounded px-1.5 py-0.5">
-          New
-        </span>
-      )}
-      <p className="text-sm text-gray-800 leading-relaxed">{fact.text}</p>
-      <div className="mt-1.5 flex items-center gap-2">
-        {fact.confidence != null && (
-          <span className="text-xs text-gray-400">
-            {(fact.confidence * 100).toFixed(0)}% conf
+      <CardContent>
+        {isNew && (
+          <span className="inline-block mb-1 text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5">
+            New
           </span>
         )}
-        <span className="text-xs text-gray-300">·</span>
-        <span className="text-xs text-gray-400">
-          {new Date(fact.createdAt).toLocaleDateString()}
-        </span>
-        <Button variant="link" size="sm" className="ml-auto" onClick={() => onExplain(fact.memoryId)}>
-          Explain →
-        </Button>
-      </div>
-    </div>
+        <p className="text-sm text-card-foreground leading-relaxed">{fact.text}</p>
+        <div className="mt-1.5 flex items-center gap-2">
+          {fact.confidence != null && (
+            <span className="text-xs text-muted-foreground">
+              {(fact.confidence * 100).toFixed(0)}% conf
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground/50">·</span>
+          <span className="text-xs text-muted-foreground">
+            {new Date(fact.createdAt).toLocaleDateString()}
+          </span>
+          <Button variant="link" size="sm" className="ml-auto" onClick={() => onExplain(fact.memoryId)}>
+            Explain →
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -342,24 +350,24 @@ function IngestPanel({
           <div className="flex gap-2 items-center">
             <label htmlFor="role-select" className="text-xs text-gray-400">Role</label>
             <div className="w-32">
-              <Select
-                id="role-select"
-                value={role}
-                onValueChange={(v) => setRole(v as typeof role)}
-                options={[
-                  { value: "user", label: "User" },
-                  { value: "assistant", label: "Assistant" },
-                  { value: "system", label: "System" },
-                ]}
-              />
+              <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
+                <SelectTrigger id="role-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="assistant">Assistant</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <textarea
+          <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Type a message to ingest…"
             rows={4}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="resize-none"
           />
           {sendMutation.error && (
             <p className="text-xs text-red-500">Failed to send message.</p>
@@ -459,11 +467,11 @@ function SearchPanel({
 
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
         <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
+          <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search memories…"
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1"
           />
           <Button type="submit" disabled={isFetching || !query.trim()}>
             {isFetching ? "…" : "Search"}
@@ -632,18 +640,18 @@ export function WorkbenchPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-full">
       {/* Top bar */}
-      <header className="bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-3 shrink-0">
-        <Link to="/projects" className="text-sm text-gray-400 hover:text-gray-600">
-          ← Projects
+      <header className="border-b border-border px-5 py-3 flex items-center gap-3 shrink-0">
+        <Link to="/projects" className="text-xs text-muted-foreground hover:text-foreground">
+          Projects
         </Link>
-        <span className="text-gray-300">/</span>
-        <h1 className="text-sm font-semibold text-gray-900">{project.name}</h1>
+        <span className="text-muted-foreground/40">/</span>
+        <h1 className="text-xs font-semibold text-foreground">{project.name}</h1>
         <Link
           to="/projects/$projectId/graph"
           params={{ projectId: project.id }}
-          className="ml-auto text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+          className="ml-auto text-xs text-primary hover:text-primary/80 font-medium"
         >
           Knowledge Graph →
         </Link>
@@ -652,7 +660,7 @@ export function WorkbenchPage() {
       {/* Split panels */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left — 40% */}
-        <div className="w-2/5 border-r border-gray-200 bg-white overflow-hidden">
+        <div className="w-2/5 border-r border-border bg-card overflow-hidden">
           <IngestPanel
             projectId={project.id}
             apiKey={apiKey}
@@ -661,7 +669,7 @@ export function WorkbenchPage() {
         </div>
 
         {/* Right — 60% */}
-        <div className="w-3/5 bg-white overflow-hidden">
+        <div className="w-3/5 bg-card overflow-hidden">
           <SearchPanel
             projectId={project.id}
             apiKey={apiKey}

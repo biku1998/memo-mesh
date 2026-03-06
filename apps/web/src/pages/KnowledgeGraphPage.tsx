@@ -8,7 +8,7 @@ import {
   getGraph,
   getEntityDetail,
 } from "../lib/api";
-import { Button } from "../components/Button";
+import { Button } from "@/components/ui/button";
 
 // Color palette by entity kind
 const KIND_COLORS: Record<string, string> = {
@@ -388,25 +388,25 @@ export function KnowledgeGraphPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-full">
       {/* Top bar */}
-      <header className="bg-white border-b border-gray-200 px-5 py-3 flex items-center gap-3 shrink-0">
-        <Link to="/projects" className="text-sm text-gray-400 hover:text-gray-600">
-          ← Projects
+      <header className="border-b border-border px-5 py-3 flex items-center gap-3 shrink-0">
+        <Link to="/projects" className="text-xs text-muted-foreground hover:text-foreground">
+          Projects
         </Link>
-        <span className="text-gray-300">/</span>
+        <span className="text-muted-foreground/40">/</span>
         <Link
           to="/projects/$projectId/workbench"
           params={{ projectId }}
-          className="text-sm text-gray-400 hover:text-gray-600"
+          className="text-xs text-muted-foreground hover:text-foreground"
         >
           {project.name}
         </Link>
-        <span className="text-gray-300">/</span>
-        <h1 className="text-sm font-semibold text-gray-900">Knowledge Graph</h1>
+        <span className="text-muted-foreground/40">/</span>
+        <h1 className="text-xs font-semibold text-foreground">Knowledge Graph</h1>
 
         {graphData && (
-          <span className="ml-auto text-xs text-gray-400">
+          <span className="ml-auto text-xs text-muted-foreground">
             {graphData.nodes.length} entities · {graphData.edges.length} relations
           </span>
         )}

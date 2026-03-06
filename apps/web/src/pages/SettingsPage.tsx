@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { getProviderKeys, upsertProviderKey, deleteProviderKey, ApiError } from "../lib/api";
-import { Select } from "../components/Select";
-import { Button } from "../components/Button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { toast } from "sonner";
 
@@ -74,66 +75,51 @@ export function SettingsPage() {
   const getKeyInfo = (p: Provider) => keys?.find((k) => k.provider === p);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/projects" className="text-lg font-semibold text-gray-900 hover:text-indigo-600">
-            Memo Mesh
-          </Link>
-          <span className="text-gray-300">/</span>
-          <span className="text-sm font-medium text-gray-600">Settings</span>
+    <div className="max-w-2xl mx-auto px-6 py-10 space-y-8">
+      <div>
+        <h2 className="text-xl font-semibold text-foreground">Settings</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your provider API keys. Keys are encrypted at rest.
+        </p>
+      </div>
+
+      {serverUnavailable && (
+        <div className="bg-destructive/10 text-destructive px-4 py-3 text-sm">
+          Key storage is unavailable — <code className="font-mono">KEY_ENCRYPTION_SECRET</code> is not
+          configured on the server. Set it in your environment and restart the API.
         </div>
-        <Link
-          to="/projects"
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          Back to projects
-        </Link>
-      </header>
+      )}
 
-      <main className="max-w-2xl mx-auto px-6 py-10 space-y-8">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Provider API Keys</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Keys are encrypted at rest. Only masked values are shown after saving.
-          </p>
-        </div>
-
-        {serverUnavailable && (
-          <div className="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-            Key storage is unavailable — <code className="font-mono">KEY_ENCRYPTION_SECRET</code> is not
-            configured on the server. Set it in your environment and restart the API.
-          </div>
-        )}
-
-        {/* Current keys status */}
-        {!serverUnavailable && (
-          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+      {/* Current keys status */}
+      {!serverUnavailable && (
+        <Card>
+          <CardContent className="divide-y divide-border">
             {PROVIDERS.map((p) => {
               const info = getKeyInfo(p);
               return (
-                <div key={p} className="flex items-center justify-between px-5 py-4">
+                <div key={p} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
                   <div>
-                    <p className="text-sm font-medium text-gray-800 capitalize">{p}</p>
+                    <p className="text-sm font-medium text-card-foreground capitalize">{p}</p>
                     {isLoading ? (
-                      <p className="text-xs text-gray-400 mt-0.5">Loading…</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Loading…</p>
                     ) : info ? (
-                      <p className="text-xs text-gray-400 mt-0.5 font-mono">
+                      <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                         {info.maskedKey}
-                        <span className="font-sans ml-2 text-gray-300">·</span>
+                        <span className="font-sans ml-2 text-muted-foreground/50">·</span>
                         <span className="font-sans ml-2">
                           Updated {new Date(info.updatedAt).toLocaleDateString()}
                         </span>
                       </p>
                     ) : (
-                      <p className="text-xs text-gray-400 mt-0.5">Not configured</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Not configured</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     {info && (
                       <Button
-                        variant="danger-ghost"
+                        variant="ghost"
                         size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => setConfirmDelete(p)}
                         disabled={deleting === p}
                       >
@@ -141,10 +127,10 @@ export function SettingsPage() {
                       </Button>
                     )}
                     <span
-                      className={`text-xs rounded-full px-2 py-0.5 font-medium ${
+                      className={`text-xs px-2 py-0.5 font-medium ${
                         info
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-100 text-gray-400"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {info ? "Configured" : "Not set"}
@@ -153,30 +139,32 @@ export function SettingsPage() {
                 </div>
               );
             })}
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Set / update key form */}
-        {!serverUnavailable && (
-          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+      {/* Set / update key form */}
+      {!serverUnavailable && (
+        <Card>
+          <CardContent className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-gray-800">
+              <h3 className="text-sm font-semibold text-card-foreground">
                 {getKeyInfo(provider) ? "Update a provider key" : "Set a provider key"}
               </h3>
               {getKeyInfo(provider) && (
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-destructive mt-1">
                   A key already exists for {provider}. Saving will replace it.
                 </p>
               )}
             </div>
 
             {saveSuccess && (
-              <div className="rounded-md bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700">
+              <div className="bg-primary/10 text-primary px-3 py-2 text-sm">
                 Key saved successfully.
               </div>
             )}
             {saveError && (
-              <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+              <div className="bg-destructive/10 text-destructive px-3 py-2 text-sm">
                 {saveError}
               </div>
             )}
@@ -184,26 +172,35 @@ export function SettingsPage() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="flex gap-3">
                 <div className="w-40">
-                  <label htmlFor="provider" className="block text-xs font-medium text-gray-600 mb-1">
+                  <label htmlFor="provider" className="block text-xs font-medium text-muted-foreground mb-1">
                     Provider
                   </label>
                   <Select
-                    id="provider"
                     value={provider}
                     onValueChange={(v) => {
                       setProvider(v as Provider);
                       setSaveSuccess(false);
                       setSaveError(null);
                     }}
-                    options={PROVIDERS.map((p) => ({ value: p, label: p.charAt(0).toUpperCase() + p.slice(1) }))}
-                  />
+                  >
+                    <SelectTrigger id="provider">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROVIDERS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p.charAt(0).toUpperCase() + p.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex-1">
-                  <label htmlFor="apiKey" className="block text-xs font-medium text-gray-600 mb-1">
+                  <label htmlFor="apiKey" className="block text-xs font-medium text-muted-foreground mb-1">
                     API Key
                   </label>
-                  <input
+                  <Input
                     id="apiKey"
                     type="password"
                     required
@@ -214,7 +211,7 @@ export function SettingsPage() {
                       setSaveError(null);
                     }}
                     placeholder="sk-..."
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="font-mono"
                   />
                 </div>
               </div>
@@ -225,9 +222,9 @@ export function SettingsPage() {
                 </Button>
               </div>
             </form>
-          </div>
-        )}
-      </main>
+          </CardContent>
+        </Card>
+      )}
 
       <ConfirmationDialog
         open={confirmDelete !== null}

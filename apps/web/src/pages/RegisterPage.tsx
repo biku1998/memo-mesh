@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { register, ApiError } from "../lib/api";
-import { Button } from "../components/Button";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -44,13 +45,12 @@ export function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
+            <Input
               id="email"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="you@example.com"
             />
           </div>
@@ -58,14 +58,13 @@ export function RegisterPage() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password <span className="text-gray-400">(min 8 chars)</span>
             </label>
-            <input
+            <Input
               id="password"
               type="password"
               required
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="••••••••"
             />
           </div>
