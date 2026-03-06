@@ -41,7 +41,7 @@ function EntityPanel({
   onNavigate: (entityId: string) => void;
 }) {
   const { data, isLoading, error } = useQuery({
-    queryKey: ["entity-detail", projectId, entityId],
+    queryKey: ["entity-detail", projectId, apiKey, entityId],
     queryFn: () => getEntityDetail(projectId, apiKey, entityId),
   });
 
@@ -225,7 +225,7 @@ export function KnowledgeGraphPage() {
   const apiKey = apiKeyData?.apiKey ?? "";
 
   const { data: graphData, isLoading, error } = useQuery({
-    queryKey: ["graph", projectId],
+    queryKey: ["graph", projectId, apiKey],
     queryFn: () => getGraph(projectId, apiKey, 200),
     enabled: !!apiKey,
   });

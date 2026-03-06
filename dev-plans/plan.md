@@ -218,10 +218,10 @@ A self-hostable memory layer for LLM agents. This plan tracks progress with a **
 
 ### 3B — Provider Key Management (after Playground validation)
 
-- [ ] Implement encryption utility (`crypto` AES-256-GCM, keyed by `KEY_ENCRYPTION_SECRET` env var)
-- [ ] Implement `PUT /v1/admin/provider-keys` — encrypts and stores provider API key
-- [ ] Implement `GET /v1/admin/provider-keys` — returns masked metadata only
-- [ ] Update `packages/llm` to read provider keys from DB (decrypt) instead of env vars
+- [x] Implement encryption utility (`crypto` AES-256-GCM, keyed by `KEY_ENCRYPTION_SECRET` env var)
+- [x] Implement `PUT /v1/admin/provider-keys` — encrypts and stores provider API key
+- [x] Implement `GET /v1/admin/provider-keys` — returns masked metadata only
+- [x] Update `packages/llm` to read provider keys from DB (decrypt) instead of env vars
 - [ ] Document key rotation process in README
 
 **3B Acceptance**: Provider keys encrypted at rest. `packages/llm` reads from DB, not env vars. Never logs raw keys.

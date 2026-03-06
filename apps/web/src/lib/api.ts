@@ -260,7 +260,7 @@ export interface GraphEdge {
   subjectEntityId: string;
   predicate: string;
   objectEntityId: string;
-  confidence: number;
+  confidence: number | null;
   evidenceMemoryId: string | null;
   createdAt: string;
 }
