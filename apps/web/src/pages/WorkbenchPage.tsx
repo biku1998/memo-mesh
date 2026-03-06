@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Select } from "../components/Select";
+import { Button } from "../components/Button";
 import {
   getProjects,
   getProjectApiKey,
@@ -60,14 +62,9 @@ function ExplainDrawer({
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white border-l border-gray-200 shadow-xl z-50 overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-900">Memory Provenance</h2>
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-lg leading-none"
-          >
+          <Button variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
             ✕
-          </button>
+          </Button>
         </div>
 
         <div className="px-5 py-4 space-y-5">
@@ -194,12 +191,9 @@ function FactCard({
             {(fact.confidence * 100).toFixed(0)}% conf
           </span>
         )}
-        <button
-          onClick={() => onExplain(fact.memoryId)}
-          className="ml-auto text-xs text-indigo-500 hover:text-indigo-700 hover:underline"
-        >
+        <Button variant="link" size="sm" className="ml-auto" onClick={() => onExplain(fact.memoryId)}>
           Explain →
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -238,12 +232,9 @@ function FactMemoryCard({
         <span className="text-xs text-gray-400">
           {new Date(fact.createdAt).toLocaleDateString()}
         </span>
-        <button
-          onClick={() => onExplain(fact.memoryId)}
-          className="ml-auto text-xs text-indigo-500 hover:text-indigo-700 hover:underline"
-        >
+        <Button variant="link" size="sm" className="ml-auto" onClick={() => onExplain(fact.memoryId)}>
           Explain →
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -349,16 +340,19 @@ function IngestPanel({
         {/* Input form */}
         <form onSubmit={handleSubmit} className="space-y-2">
           <div className="flex gap-2 items-center">
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as typeof role)}
-              className="rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="user">user</option>
-              <option value="assistant">assistant</option>
-              <option value="system">system</option>
-            </select>
-            <span className="text-xs text-gray-400">Role</span>
+            <label htmlFor="role-select" className="text-xs text-gray-400">Role</label>
+            <div className="w-32">
+              <Select
+                id="role-select"
+                value={role}
+                onValueChange={(v) => setRole(v as typeof role)}
+                options={[
+                  { value: "user", label: "User" },
+                  { value: "assistant", label: "Assistant" },
+                  { value: "system", label: "System" },
+                ]}
+              />
+            </div>
           </div>
           <textarea
             value={content}
@@ -370,13 +364,9 @@ function IngestPanel({
           {sendMutation.error && (
             <p className="text-xs text-red-500">Failed to send message.</p>
           )}
-          <button
-            type="submit"
-            disabled={sendMutation.isPending || !content.trim()}
-            className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
+          <Button type="submit" disabled={sendMutation.isPending || !content.trim()} className="w-full">
             {sendMutation.isPending ? "Sending…" : "Send & Extract"}
-          </button>
+          </Button>
         </form>
 
         {/* Extracted facts from DB */}
@@ -475,13 +465,9 @@ function SearchPanel({
             placeholder="Search memories…"
             className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          <button
-            type="submit"
-            disabled={isFetching || !query.trim()}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
+          <Button type="submit" disabled={isFetching || !query.trim()}>
             {isFetching ? "…" : "Search"}
-          </button>
+          </Button>
         </form>
 
         {error && <p className="text-sm text-red-500">Search failed.</p>}
@@ -528,12 +514,9 @@ function SearchResultItem({
         <span className="bg-gray-100 rounded px-1.5 py-0.5">{item.type}</span>
         <span title="Final score">{(item.finalScore * 100).toFixed(0)}%</span>
         <span title="Similarity">{(item.similarity * 100).toFixed(0)}% sim</span>
-        <button
-          onClick={() => onExplain(item.memoryId)}
-          className="ml-auto text-indigo-500 hover:text-indigo-700 hover:underline"
-        >
+        <Button variant="link" size="sm" className="ml-auto" onClick={() => onExplain(item.memoryId)}>
           Explain →
-        </button>
+        </Button>
       </div>
     </li>
   );

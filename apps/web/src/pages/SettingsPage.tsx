@@ -1,7 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { getProviderKeys, upsertProviderKey, ApiError } from "../lib/api";
+import { getProviderKeys, upsertProviderKey, deleteProviderKey, ApiError } from "../lib/api";
+import { Select } from "../components/Select";
+import { Button } from "../components/Button";
+import { ConfirmationDialog } from "../components/ConfirmationDialog";
+import { toast } from "sonner";
 
 const PROVIDERS = ["openai", "anthropic"] as const;
 type Provider = (typeof PROVIDERS)[number];
@@ -47,6 +51,23 @@ export function SettingsPage() {
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  const [deleting, setDeleting] = useState<Provider | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Provider | null>(null);
+
+  async function handleDelete(p: Provider) {
+    setDeleting(p);
+    setConfirmDelete(null);
+    try {
+      await deleteProviderKey(p);
+      await qc.invalidateQueries({ queryKey: ["provider-keys"] });
+      toast.success(`${p} API key removed successfully.`);
+    } catch {
+      toast.error(`Failed to remove ${p} key.`);
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -108,15 +129,27 @@ export function SettingsPage() {
                       <p className="text-xs text-gray-400 mt-0.5">Not configured</p>
                     )}
                   </div>
-                  <span
-                    className={`text-xs rounded-full px-2 py-0.5 font-medium ${
-                      info
-                        ? "bg-green-50 text-green-700"
-                        : "bg-gray-100 text-gray-400"
-                    }`}
-                  >
-                    {info ? "Configured" : "Not set"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {info && (
+                      <Button
+                        variant="danger-ghost"
+                        size="sm"
+                        onClick={() => setConfirmDelete(p)}
+                        disabled={deleting === p}
+                      >
+                        {deleting === p ? "Removing…" : "Remove"}
+                      </Button>
+                    )}
+                    <span
+                      className={`text-xs rounded-full px-2 py-0.5 font-medium ${
+                        info
+                          ? "bg-green-50 text-green-700"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      {info ? "Configured" : "Not set"}
+                    </span>
+                  </div>
                 </div>
               );
             })}
@@ -126,7 +159,16 @@ export function SettingsPage() {
         {/* Set / update key form */}
         {!serverUnavailable && (
           <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-800">Set a provider key</h3>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800">
+                {getKeyInfo(provider) ? "Update a provider key" : "Set a provider key"}
+              </h3>
+              {getKeyInfo(provider) && (
+                <p className="text-xs text-amber-600 mt-1">
+                  A key already exists for {provider}. Saving will replace it.
+                </p>
+              )}
+            </div>
 
             {saveSuccess && (
               <div className="rounded-md bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700">
@@ -141,26 +183,20 @@ export function SettingsPage() {
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="flex gap-3">
-                <div className="w-36">
+                <div className="w-40">
                   <label htmlFor="provider" className="block text-xs font-medium text-gray-600 mb-1">
                     Provider
                   </label>
-                  <select
+                  <Select
                     id="provider"
                     value={provider}
-                    onChange={(e) => {
-                      setProvider(e.target.value as Provider);
+                    onValueChange={(v) => {
+                      setProvider(v as Provider);
                       setSaveSuccess(false);
                       setSaveError(null);
                     }}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    {PROVIDERS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
+                    options={PROVIDERS.map((p) => ({ value: p, label: p.charAt(0).toUpperCase() + p.slice(1) }))}
+                  />
                 </div>
 
                 <div className="flex-1">
@@ -184,18 +220,28 @@ export function SettingsPage() {
               </div>
 
               <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={saving || !apiKey.trim()}
-                  className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                >
-                  {saving ? "Saving…" : "Save key"}
-                </button>
+                <Button type="submit" disabled={saving || !apiKey.trim()}>
+                  {saving ? "Saving…" : getKeyInfo(provider) ? "Update key" : "Save key"}
+                </Button>
               </div>
             </form>
           </div>
         )}
       </main>
+
+      <ConfirmationDialog
+        open={confirmDelete !== null}
+        onOpenChange={(open) => { if (!open) setConfirmDelete(null); }}
+        title="Remove provider key"
+        description={`This will remove the ${confirmDelete ?? ""} API key. Projects using this provider will stop working until a new key is configured.`}
+        confirmations={[
+          { label: "provider name", value: confirmDelete ?? "" },
+        ]}
+        warning={`Removing the ${confirmDelete ?? ""} key cannot be undone.`}
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={() => { if (confirmDelete) handleDelete(confirmDelete); }}
+      />
     </div>
   );
 }

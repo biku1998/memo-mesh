@@ -15,7 +15,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
     },
   });
@@ -242,6 +242,12 @@ export function upsertProviderKey(provider: "openai" | "anthropic", key: string)
   return request<{ provider: string; updatedAt: string }>("/v1/admin/provider-keys", {
     method: "PUT",
     body: JSON.stringify({ provider, key }),
+  });
+}
+
+export function deleteProviderKey(provider: "openai" | "anthropic") {
+  return request<{ ok: boolean }>(`/v1/admin/provider-keys/${provider}`, {
+    method: "DELETE",
   });
 }
 

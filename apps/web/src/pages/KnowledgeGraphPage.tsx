@@ -8,6 +8,7 @@ import {
   getGraph,
   getEntityDetail,
 } from "../lib/api";
+import { Button } from "../components/Button";
 
 // Color palette by entity kind
 const KIND_COLORS: Record<string, string> = {
@@ -80,12 +81,9 @@ function EntityPanel({
             {entity.kind}
           </span>
         </div>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 text-lg leading-none"
-        >
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
           ×
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
@@ -98,12 +96,9 @@ function EntityPanel({
                 <RelationRow>
                   <span className="text-gray-500">{r.predicate}</span>
                   <span className="mx-1 text-gray-300">→</span>
-                  <button
-                    onClick={() => r.target && onNavigate(r.target.id)}
-                    className="text-indigo-600 hover:underline font-medium"
-                  >
+                  <Button variant="link" size="sm" onClick={() => r.target && onNavigate(r.target.id)}>
                     {r.target?.name}
-                  </button>
+                  </Button>
                   <ConfidenceBadge value={r.confidence} />
                 </RelationRow>
                 {r.evidence && <EvidenceSnippet text={r.evidence.text} type={r.evidence.type} />}
@@ -118,12 +113,9 @@ function EntityPanel({
             {relations.incoming.map((r) => (
               <div key={r.id}>
                 <RelationRow>
-                  <button
-                    onClick={() => r.source && onNavigate(r.source.id)}
-                    className="text-indigo-600 hover:underline font-medium"
-                  >
+                  <Button variant="link" size="sm" onClick={() => r.source && onNavigate(r.source.id)}>
                     {r.source?.name}
-                  </button>
+                  </Button>
                   <span className="mx-1 text-gray-300">→</span>
                   <span className="text-gray-500">{r.predicate}</span>
                   <ConfidenceBadge value={r.confidence} />
