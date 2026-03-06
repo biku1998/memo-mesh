@@ -94,17 +94,20 @@ function EntityPanel({
         {relations.outgoing.length > 0 && (
           <Section title="Outgoing relations">
             {relations.outgoing.map((r) => (
-              <RelationRow key={r.id}>
-                <span className="text-gray-500">{r.predicate}</span>
-                <span className="mx-1 text-gray-300">→</span>
-                <button
-                  onClick={() => r.target && onNavigate(r.target.id)}
-                  className="text-indigo-600 hover:underline font-medium"
-                >
-                  {r.target?.name}
-                </button>
-                <ConfidenceBadge value={r.confidence} />
-              </RelationRow>
+              <div key={r.id}>
+                <RelationRow>
+                  <span className="text-gray-500">{r.predicate}</span>
+                  <span className="mx-1 text-gray-300">→</span>
+                  <button
+                    onClick={() => r.target && onNavigate(r.target.id)}
+                    className="text-indigo-600 hover:underline font-medium"
+                  >
+                    {r.target?.name}
+                  </button>
+                  <ConfidenceBadge value={r.confidence} />
+                </RelationRow>
+                {r.evidence && <EvidenceSnippet text={r.evidence.text} type={r.evidence.type} />}
+              </div>
             ))}
           </Section>
         )}
@@ -113,17 +116,20 @@ function EntityPanel({
         {relations.incoming.length > 0 && (
           <Section title="Incoming relations">
             {relations.incoming.map((r) => (
-              <RelationRow key={r.id}>
-                <button
-                  onClick={() => r.source && onNavigate(r.source.id)}
-                  className="text-indigo-600 hover:underline font-medium"
-                >
-                  {r.source?.name}
-                </button>
-                <span className="mx-1 text-gray-300">→</span>
-                <span className="text-gray-500">{r.predicate}</span>
-                <ConfidenceBadge value={r.confidence} />
-              </RelationRow>
+              <div key={r.id}>
+                <RelationRow>
+                  <button
+                    onClick={() => r.source && onNavigate(r.source.id)}
+                    className="text-indigo-600 hover:underline font-medium"
+                  >
+                    {r.source?.name}
+                  </button>
+                  <span className="mx-1 text-gray-300">→</span>
+                  <span className="text-gray-500">{r.predicate}</span>
+                  <ConfidenceBadge value={r.confidence} />
+                </RelationRow>
+                {r.evidence && <EvidenceSnippet text={r.evidence.text} type={r.evidence.type} />}
+              </div>
             ))}
           </Section>
         )}
@@ -179,6 +185,14 @@ function ConfidenceBadge({ value }: { value: number }) {
     <span className="ml-auto text-[10px] text-gray-400 bg-gray-100 rounded px-1.5 py-0.5">
       {Math.round(value * 100)}%
     </span>
+  );
+}
+
+function EvidenceSnippet({ text, type }: { text: string; type: string }) {
+  return (
+    <p className="ml-4 mb-1 text-[11px] text-gray-400 italic truncate" title={text}>
+      {type}: {text}
+    </p>
   );
 }
 
