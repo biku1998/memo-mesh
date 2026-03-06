@@ -538,7 +538,6 @@ export function WorkbenchPage() {
         <ExplainDrawer
           memoryId={explainMemoryId}
           projectId={project.id}
-          apiKey={apiKey}
           onClose={() => setExplainMemoryId(null)}
         />
       )}

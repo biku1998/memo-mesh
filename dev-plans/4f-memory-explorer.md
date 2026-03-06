@@ -21,7 +21,7 @@ Extract from `apps/web/src/pages/WorkbenchPage.tsx` (lines 28-175):
 
 **Modify** `apps/web/src/pages/WorkbenchPage.tsx`
 - Remove the three extracted functions
-- Add `import { ExplainDrawer, StatusBadge } from "../components/ExplainDrawer"`
+- Add `import { ExplainDrawer } from "../components/ExplainDrawer"`
 - No other changes needed — all usage sites stay the same
 
 ### Step 2: Add session-auth memories list API endpoint
@@ -32,7 +32,8 @@ Route: `GET /v1/projects/:projectId/dashboard/memories`
 Auth: Session-based (check `request.session.userId` + verify project ownership via `prisma.project.findFirst({ where: { id: projectId, userId } })`) — follows the exact pattern in `apps/api/src/routes/projects.ts` lines 62-85.
 
 Query params (validated with Zod inline, same as `memories.ts` pattern):
-```
+
+```text
 type:   "fact" | "raw" (optional — omit to get all types)
 status: "active" | "superseded" (optional — omit to get all statuses)
 cursor: string (optional — memory ID for cursor pagination)
@@ -109,7 +110,6 @@ ExplainDrawer (conditional overlay)
 
 Key patterns:
 - **Route param**: `useParams({ from: "/protected/projects/$projectId/memories" })`
-- **API key**: Fetch with `useQuery({ queryKey: ["project-api-key", projectId], queryFn: () => getProjectApiKey(projectId) })` — needed for the ExplainDrawer which calls the API-key-protected explain endpoint
 - **Filters**: Two `<Select>` components (reuse from `@/components/ui/select`):
   - Type: All / Fact / Raw
   - Status: All / Active / Superseded
@@ -127,9 +127,10 @@ Key patterns:
   - Confidence percentage (if not null)
   - `createdAt` with `toLocaleDateString()`
   - `<Button variant="link">Explain →</Button>` that sets `explainMemoryId`
-- **Load more**: `<Button variant="outline" onClick={() => fetchNextPage()}>` shown when `hasNextPage`
-- **Empty state**: "No memories yet" centered message
-- **Loading**: "Loading..." text during initial fetch
+- **Infinite scroll**: `useRef` sentinel div at list bottom + `IntersectionObserver` in `useEffect` that calls `fetchNextPage()` when in view and `hasNextPage && !isFetchingNextPage`
+- **Empty state**: "No memories yet" centered message (guarded by `!isLoading && !isError`)
+- **Error state**: Error message shown when `isError` is true
+- **Loading**: "Loading…" text during initial fetch and next-page fetch
 
 ### Step 5: Register the route
 

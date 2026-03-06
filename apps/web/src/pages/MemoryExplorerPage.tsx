@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getProjects, getProjectApiKey, getMemories } from "../lib/api";
+import { getProjects, getMemories } from "../lib/api";
 import { ExplainDrawer, StatusBadge } from "../components/ExplainDrawer";
 
 export function MemoryExplorerPage() {
@@ -12,19 +12,14 @@ export function MemoryExplorerPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [explainMemoryId, setExplainMemoryId] = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: getProjects,
   });
 
-  const { data: keyData } = useQuery({
-    queryKey: ["project-api-key", projectId],
-    queryFn: () => getProjectApiKey(projectId),
-  });
-
   const project = projects?.find((p) => p.id === projectId);
-  const apiKey = keyData?.apiKey ?? "";
 
   const type = typeFilter === "all" ? undefined : typeFilter;
   const status = statusFilter === "all" ? undefined : statusFilter;
@@ -32,6 +27,8 @@ export function MemoryExplorerPage() {
   const {
     data,
     isLoading,
+    isError,
+    error,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -49,6 +46,21 @@ export function MemoryExplorerPage() {
   });
 
   const allMemories = data?.pages.flatMap((p) => p.memories) ?? [];
+
+  // Infinite scroll: fetch next page when sentinel enters view
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (projectsLoading) {
     return (
@@ -136,7 +148,14 @@ export function MemoryExplorerPage() {
           <p className="text-sm text-muted-foreground">Loading…</p>
         )}
 
-        {!isLoading && allMemories.length === 0 && (
+        {isError && (
+          <div className="flex flex-col items-center justify-center h-48 text-destructive text-sm">
+            Failed to load memories.{" "}
+            {error instanceof Error ? error.message : "Unknown error"}
+          </div>
+        )}
+
+        {!isLoading && !isError && allMemories.length === 0 && (
           <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-sm">
             No memories yet.
           </div>
@@ -172,26 +191,19 @@ export function MemoryExplorerPage() {
           </Card>
         ))}
 
-        {hasNextPage && (
-          <div className="pt-2 flex justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-            >
-              {isFetchingNextPage ? "Loading…" : "Load more"}
-            </Button>
-          </div>
-        )}
+        {/* Infinite scroll sentinel */}
+        <div ref={sentinelRef} className="py-2 flex justify-center">
+          {isFetchingNextPage && (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          )}
+        </div>
       </div>
 
       {/* Explain Drawer */}
-      {explainMemoryId && apiKey && (
+      {explainMemoryId && (
         <ExplainDrawer
           memoryId={explainMemoryId}
           projectId={project.id}
-          apiKey={apiKey}
           onClose={() => setExplainMemoryId(null)}
         />
       )}

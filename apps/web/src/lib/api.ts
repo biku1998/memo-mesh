@@ -226,6 +226,13 @@ export function explainMemory(projectId: string, apiKey: string, memoryId: strin
   });
 }
 
+// Session-auth version — no API key required, for use in dashboard pages
+export function explainMemoryDashboard(projectId: string, memoryId: string) {
+  return request<ExplainResponse>(
+    `/v1/projects/${projectId}/dashboard/memories/${memoryId}/explain`,
+  );
+}
+
 // --- Provider Keys ---
 
 export interface ProviderKeyInfo {

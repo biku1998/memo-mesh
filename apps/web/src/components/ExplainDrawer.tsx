@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { explainMemory, type ExplainResponse } from "../lib/api";
+import { explainMemoryDashboard, type ExplainResponse } from "../lib/api";
 
 export function StatusBadge({ status }: { status: string }) {
   const isSuperseded = status === "superseded";
@@ -100,17 +100,15 @@ function ExplainContent({ data }: { data: ExplainResponse }) {
 export function ExplainDrawer({
   memoryId,
   projectId,
-  apiKey,
   onClose,
 }: {
   memoryId: string;
   projectId: string;
-  apiKey: string;
   onClose: () => void;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["explain", projectId, memoryId],
-    queryFn: () => explainMemory(projectId, apiKey, memoryId),
+    queryFn: () => explainMemoryDashboard(projectId, memoryId),
   });
 
   // Close on Escape
@@ -134,9 +132,14 @@ export function ExplainDrawer({
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClose(); }}
       />
       {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white border-l border-gray-200 shadow-xl z-50 overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="explain-drawer-title"
+        className="fixed right-0 top-0 h-full w-full max-w-md bg-white border-l border-gray-200 shadow-xl z-50 overflow-y-auto"
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-900">Memory Provenance</h2>
+          <h2 id="explain-drawer-title" className="text-sm font-semibold text-gray-900">Memory Provenance</h2>
           <Button variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
             ✕
           </Button>
