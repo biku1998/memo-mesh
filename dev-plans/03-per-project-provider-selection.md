@@ -38,12 +38,11 @@ Projects already have a `provider` field ("openai" | "anthropic") in the databas
 
 ### 3. packages/llm — Use project's provider for key resolution
 
-**File:** [openai-key.ts](packages/llm/src/openai-key.ts)
+**File:** [provider-key.ts](packages/llm/src/provider-key.ts) *(renamed from `openai-key.ts`)*
 
-- Rename to something more generic (e.g., `provider-key.ts`) or add a new function
-- Add: `getProviderApiKey(provider: string): Promise<string>`
+- Generic provider key resolver: `getProviderApiKey(provider: string): Promise<string>`
   - Fetches global DB key for the given provider → falls back to env var (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`) → throws
-- Keep `getOpenAIApiKey()` as a wrapper calling `getProviderApiKey("openai")` for backward compat
+- `getOpenAIApiKey()` retained as a backward-compatible wrapper calling `getProviderApiKey("openai")`
 
 **File:** [embeddings.ts](packages/llm/src/embeddings.ts)
 
@@ -111,7 +110,7 @@ On each project card:
 |------|--------|
 | [auth.ts](packages/shared/src/schemas/auth.ts) | Add `UpdateProjectBody` schema |
 | [projects.ts](apps/api/src/routes/projects.ts) | Add `PATCH /v1/projects/:projectId` endpoint |
-| [openai-key.ts](packages/llm/src/openai-key.ts) | Add generic `getProviderApiKey(provider)` |
+| [provider-key.ts](packages/llm/src/provider-key.ts) | Generic `getProviderApiKey(provider)` resolver |
 | [extraction.ts](packages/llm/src/extraction.ts) | Accept provider param, support Anthropic model |
 | [messages.ts](apps/api/src/routes/messages.ts) | Pass `project.provider` to `extractKnowledge` |
 | [api.ts](apps/web/src/lib/api.ts) | Add `updateProject()` function |

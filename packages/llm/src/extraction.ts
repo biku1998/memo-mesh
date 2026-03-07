@@ -100,7 +100,13 @@ function repairAndParse(raw: unknown): ExtractionResultType | null {
  * 4. If retry fails: return empty extraction (caller logs the error).
  */
 export async function extractKnowledge(content: string, provider: string = "openai"): Promise<ExtractionResultType> {
-  const apiKey = await getProviderApiKey(provider);
+  let apiKey: string;
+  try {
+    apiKey = await getProviderApiKey(provider);
+  } catch {
+    // No key configured for this provider — degrade gracefully.
+    return EMPTY_EXTRACTION;
+  }
 
   // --- Attempt 1 ---
   try {

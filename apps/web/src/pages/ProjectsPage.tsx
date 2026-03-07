@@ -257,7 +257,7 @@ export function ProjectsPage() {
                           onValueChange={(v) => {
                             updateMutation.mutate({ projectId: p.id, newProvider: v as Provider });
                           }}
-                          disabled={!providersLoaded || configured.size < 2}
+                          disabled={!providersLoaded || (configured.size < 2 && configured.has(p.provider))}
                         >
                           <SelectTrigger
                             className="w-28 h-7 text-xs"
