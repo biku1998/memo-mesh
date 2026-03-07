@@ -1,7 +1,8 @@
 import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { ExtractionResult, type ExtractionResult as ExtractionResultType } from "@memo-mesh/shared";
-import { getOpenAIApiKey } from "./openai-key.js";
+import { getProviderApiKey } from "./provider-key.js";
 
 const EXTRACTION_PROMPT = `You are a knowledge extraction system. Given a user message, extract structured knowledge.
 
@@ -29,13 +30,17 @@ const EMPTY_EXTRACTION: ExtractionResultType = {
  * Attempt a single structured extraction call via the AI SDK.
  * Returns the validated ExtractionResult or throws on failure.
  */
-async function attemptExtraction(content: string, apiKey: string): Promise<ExtractionResultType> {
+async function attemptExtraction(content: string, provider: string, apiKey: string): Promise<ExtractionResultType> {
+  const prompt = `${EXTRACTION_PROMPT}\n\nMessage: "${content}"`;
+
+  if (provider === "anthropic") {
+    const model = createAnthropic({ apiKey })("claude-haiku-4-5-20251001");
+    const { object } = await generateObject({ model, schema: ExtractionResult, prompt });
+    return object;
+  }
+
   const model = createOpenAI({ apiKey })("gpt-4o-mini");
-  const { object } = await generateObject({
-    model,
-    schema: ExtractionResult,
-    prompt: `${EXTRACTION_PROMPT}\n\nMessage: "${content}"`,
-  });
+  const { object } = await generateObject({ model, schema: ExtractionResult, prompt });
   return object;
 }
 
@@ -94,12 +99,12 @@ function repairAndParse(raw: unknown): ExtractionResultType | null {
  * 3. If repair fails: retry the LLM call once.
  * 4. If retry fails: return empty extraction (caller logs the error).
  */
-export async function extractKnowledge(content: string): Promise<ExtractionResultType> {
-  const apiKey = await getOpenAIApiKey();
+export async function extractKnowledge(content: string, provider: string = "openai"): Promise<ExtractionResultType> {
+  const apiKey = await getProviderApiKey(provider);
 
   // --- Attempt 1 ---
   try {
-    return await attemptExtraction(content, apiKey);
+    return await attemptExtraction(content, provider, apiKey);
   } catch (firstError: unknown) {
     // --- Attempt repair from raw response ---
     const repaired = repairAndParse(firstError);
@@ -107,7 +112,7 @@ export async function extractKnowledge(content: string): Promise<ExtractionResul
 
     // --- Attempt 2 (retry once) ---
     try {
-      return await attemptExtraction(content, apiKey);
+      return await attemptExtraction(content, provider, apiKey);
     } catch {
       // Both attempts failed — return empty extraction so the pipeline continues.
       // The caller (messages route) logs the top-level error.

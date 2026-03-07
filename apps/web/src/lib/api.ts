@@ -84,6 +84,13 @@ export function createProject(name: string, provider: "openai" | "anthropic" = "
   });
 }
 
+export function updateProject(projectId: string, provider: "openai" | "anthropic") {
+  return request<Project>(`/v1/projects/${projectId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ provider }),
+  });
+}
+
 export function getProjectApiKey(projectId: string) {
   return request<{ apiKey: string }>(`/v1/projects/${projectId}/api-key`);
 }

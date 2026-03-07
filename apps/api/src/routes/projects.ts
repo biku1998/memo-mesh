@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from "fastify";
 import crypto from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@memo-mesh/db";
-import { CreateProjectBody } from "@memo-mesh/shared";
+import { CreateProjectBody, UpdateProjectBody } from "@memo-mesh/shared";
 
 const GetProjectApiKeyParams = z.object({ projectId: z.string().min(1, "projectId is required") });
 
@@ -57,6 +57,46 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
         createdAt: p.createdAt.toISOString(),
       })),
     );
+  });
+
+  // PATCH /v1/projects/:projectId — update project provider (requires session + ownership)
+  fastify.patch("/v1/projects/:projectId", async (request, reply) => {
+    const userId = request.session.userId;
+    if (!userId) {
+      return reply.status(401).send({ error: "Not authenticated" });
+    }
+
+    const parsedParams = GetProjectApiKeyParams.safeParse(request.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({ error: parsedParams.error.issues[0]?.message ?? "Invalid params" });
+    }
+    const { projectId } = parsedParams.data;
+
+    const parsed = UpdateProjectBody.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
+    }
+    const { provider } = parsed.data;
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId },
+    });
+
+    if (!project) {
+      return reply.status(404).send({ error: "Project not found" });
+    }
+
+    const updated = await prisma.project.update({
+      where: { id: projectId },
+      data: { provider },
+    });
+
+    return reply.send({
+      id: updated.id,
+      name: updated.name,
+      provider: updated.provider,
+      createdAt: updated.createdAt.toISOString(),
+    });
   });
 
   // GET /v1/projects/:projectId/api-key — retrieve API key for a project (requires session + ownership)

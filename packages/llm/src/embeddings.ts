@@ -1,6 +1,6 @@
 import { embedMany, embed } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { getOpenAIApiKey } from "./openai-key.js";
+import { getOpenAIApiKey } from "./provider-key.js";
 
 /**
  * Generate an embedding vector for a single text string.

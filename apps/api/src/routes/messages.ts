@@ -230,7 +230,7 @@ export const messageRoutes: FastifyPluginAsync = async (fastify) => {
       });
 
     // Extract knowledge and store facts/entities/relations (fire-and-forget)
-    extractKnowledge(content)
+    extractKnowledge(content, project.provider)
       .then((extraction) =>
         processExtraction(projectId, message.id, extraction, fastify.log),
       )

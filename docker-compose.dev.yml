@@ -1,6 +1,7 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    container_name: postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-memo}
@@ -11,11 +12,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-memo} -d ${POSTGRES_DB:-memo_mesh}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-memo} -d ${POSTGRES_DB:-memo_mesh}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
   pgdata:
-
