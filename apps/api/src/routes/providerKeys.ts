@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { prisma, encrypt, decrypt } from "@memo-mesh/db";
 import { UpsertProviderKeyBody, DeleteProviderKeyParams } from "@memo-mesh/shared";
+import { getProviderApiKey } from "@memo-mesh/llm";
 
 function maskKey(key: string): string {
   if (key.length <= 8) return "*".repeat(key.length);
@@ -59,6 +60,27 @@ export const providerKeyRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     return reply.send({ ok: true });
+  });
+
+  // GET /v1/admin/provider-availability — check which providers have usable keys (DB or env)
+  fastify.get("/v1/admin/provider-availability", async (request, reply) => {
+    const userId = request.session.userId;
+    if (!userId) {
+      return reply.status(401).send({ error: "Not authenticated" });
+    }
+
+    const providers = ["openai", "anthropic"] as const;
+    const result = await Promise.all(
+      providers.map(async (provider) => {
+        try {
+          await getProviderApiKey(provider);
+          return { provider, available: true };
+        } catch {
+          return { provider, available: false };
+        }
+      }),
+    );
+    return reply.send(result);
   });
 
   // GET /v1/admin/provider-keys — list stored provider keys (masked)

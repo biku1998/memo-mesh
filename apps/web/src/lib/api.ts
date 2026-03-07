@@ -252,6 +252,15 @@ export function getProviderKeys() {
   return request<ProviderKeyInfo[]>("/v1/admin/provider-keys");
 }
 
+export interface ProviderAvailability {
+  provider: string;
+  available: boolean;
+}
+
+export function getProviderAvailability() {
+  return request<ProviderAvailability[]>("/v1/admin/provider-availability");
+}
+
 export function upsertProviderKey(provider: "openai" | "anthropic", key: string) {
   return request<{ provider: string; updatedAt: string }>("/v1/admin/provider-keys", {
     method: "PUT",

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { FolderOpenIcon, CalendarIcon, ArrowRightIcon, CpuIcon } from "lucide-react";
-import { getProjects, createProject, updateProject, getProviderKeys, ApiError } from "../lib/api";
+import { getProjects, createProject, updateProject, getProviderAvailability, ApiError } from "../lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,19 +28,19 @@ const PROVIDER_COLORS: Record<Provider, string> = {
 };
 
 function useConfiguredProviders() {
-  const { data: keys } = useQuery({
-    queryKey: ["providerKeys"],
-    queryFn: getProviderKeys,
+  const { data: availability } = useQuery({
+    queryKey: ["providerAvailability"],
+    queryFn: getProviderAvailability,
   });
 
   const configured = new Set<string>();
-  if (keys) {
-    for (const k of keys) {
-      configured.add(k.provider);
+  if (availability) {
+    for (const item of availability) {
+      if (item.available) configured.add(item.provider);
     }
   }
 
-  return { configured, isLoaded: !!keys };
+  return { configured, isLoaded: !!availability };
 }
 
 export function ProjectsPage() {
@@ -103,7 +103,7 @@ export function ProjectsPage() {
     }
   };
 
-  const noKeysConfigured = providersLoaded && configured.size === 0;
+  const openaiMissing = providersLoaded && !configured.has("openai");
   const onlyOneProvider = providersLoaded && configured.size === 1;
 
   return (
@@ -133,13 +133,12 @@ export function ProjectsPage() {
                   {formError}
                 </div>
               )}
-              {noKeysConfigured && (
+              {openaiMissing && (
                 <div className="bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-2 text-sm">
-                  No provider keys configured.{" "}
+                  OpenAI API key is required for project creation (used for embeddings).{" "}
                   <Link to="/settings" className="underline font-medium">
-                    Add one in Settings
-                  </Link>{" "}
-                  first.
+                    Configure it in Settings
+                  </Link>.
                 </div>
               )}
               <div className="space-y-3">
@@ -166,7 +165,7 @@ export function ProjectsPage() {
                   <Select
                     value={provider}
                     onValueChange={(v) => setProvider(v as Provider)}
-                    disabled={noKeysConfigured || onlyOneProvider}
+                    disabled={openaiMissing || onlyOneProvider}
                   >
                     <SelectTrigger className="w-48">
                       <SelectValue />
@@ -189,7 +188,7 @@ export function ProjectsPage() {
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
-                <Button type="submit" disabled={createMutation.isPending || !name.trim() || noKeysConfigured}>
+                <Button type="submit" disabled={createMutation.isPending || !name.trim() || openaiMissing}>
                   {createMutation.isPending ? "Creating…" : "Create"}
                 </Button>
                 <Button variant="outline" type="button" onClick={() => { setCreating(false); setName(""); setFormError(null); }}>

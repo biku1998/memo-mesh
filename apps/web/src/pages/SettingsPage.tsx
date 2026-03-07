@@ -37,6 +37,7 @@ export function SettingsPage() {
     try {
       await upsertProviderKey(provider, apiKey.trim());
       await qc.invalidateQueries({ queryKey: ["provider-keys"] });
+      await qc.invalidateQueries({ queryKey: ["providerAvailability"] });
       setApiKey("");
       setSaveSuccess(true);
     } catch (err) {
@@ -64,6 +65,7 @@ export function SettingsPage() {
     try {
       await deleteProviderKey(p);
       await qc.invalidateQueries({ queryKey: ["provider-keys"] });
+      await qc.invalidateQueries({ queryKey: ["providerAvailability"] });
       toast.success(`${p} API key removed successfully.`);
     } catch {
       toast.error(`Failed to remove ${p} key.`);
@@ -121,7 +123,8 @@ export function SettingsPage() {
                         size="sm"
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => setConfirmDelete(p)}
-                        disabled={deleting === p}
+                        disabled={deleting === p || p === "openai"}
+                        title={p === "openai" ? "OpenAI key is required for embeddings and cannot be removed" : undefined}
                       >
                         {deleting === p ? "Removing…" : "Remove"}
                       </Button>
