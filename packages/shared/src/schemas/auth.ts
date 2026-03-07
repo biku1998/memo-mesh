@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProviderEnum } from "./provider-keys.js";
 
 export const RegisterBody = z.object({
   email: z.string().email("Invalid email address"),
@@ -21,9 +22,14 @@ export type AuthUser = z.infer<typeof AuthUser>;
 
 export const CreateProjectBody = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  provider: z.enum(["openai", "anthropic"]).default("openai"),
+  provider: ProviderEnum.default("openai"),
 });
 export type CreateProjectBody = z.infer<typeof CreateProjectBody>;
+
+export const UpdateProjectBody = z.object({
+  provider: ProviderEnum,
+});
+export type UpdateProjectBody = z.infer<typeof UpdateProjectBody>;
 
 // Returned from POST /v1/projects (includes apiKey shown once at creation).
 export const CreateProjectResponse = z.object({
