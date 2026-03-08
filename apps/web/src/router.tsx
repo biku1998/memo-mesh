@@ -13,6 +13,7 @@ import { WorkbenchPage } from "./pages/WorkbenchPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { KnowledgeGraphPage } from "./pages/KnowledgeGraphPage";
 import { MemoryExplorerPage } from "./pages/MemoryExplorerPage";
+import { ApiDocsPage } from "./pages/ApiDocsPage";
 import { AppSidebar } from "./components/AppSidebar";
 
 // Root layout — just renders children
@@ -89,6 +90,13 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
+// /api-docs
+const apiDocsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/api-docs",
+  component: ApiDocsPage,
+});
+
 // Redirect / → /projects
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -102,7 +110,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
-  protectedRoute.addChildren([projectsRoute, workbenchRoute, graphRoute, memoriesRoute, settingsRoute]),
+  protectedRoute.addChildren([projectsRoute, workbenchRoute, graphRoute, memoriesRoute, settingsRoute, apiDocsRoute]),
 ]);
 
 export const router = createRouter({ routeTree });
