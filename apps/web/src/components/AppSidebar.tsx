@@ -44,6 +44,7 @@ function NavIcon({
       <TooltipTrigger asChild>
         <Link
           to={to}
+          aria-label={label}
           className={cn(
             "flex items-center justify-center size-10 transition-colors",
             isActive
@@ -93,6 +94,7 @@ export function AppSidebar() {
         <TooltipTrigger asChild>
           <Link
             to="/projects"
+            aria-label="Memo Mesh"
             className="flex items-center justify-center size-10 mb-2 text-primary"
           >
             <BoxesIcon className="size-6" />
@@ -121,6 +123,7 @@ export function AppSidebar() {
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <button
+                  aria-label="Account"
                   className="flex items-center justify-center size-10 transition-colors text-muted-foreground hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
                 >
                   <Avatar size="sm">

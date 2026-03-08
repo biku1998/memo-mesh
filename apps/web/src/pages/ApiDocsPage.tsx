@@ -163,11 +163,7 @@ export function ApiDocsPage() {
         <h2 className="text-2xl font-bold text-foreground">API Reference</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Complete reference for the Memo Mesh REST API. All endpoints are
-          served from the API server (default:{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">
-            http://localhost:3000
-          </code>
-          ).
+          served from your API server.
         </p>
       </div>
 
