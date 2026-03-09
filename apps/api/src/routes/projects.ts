@@ -99,6 +99,63 @@ export const projectRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
+  // DELETE /v1/projects/:projectId — delete project and all related data (requires session + ownership)
+  fastify.delete("/v1/projects/:projectId", async (request, reply) => {
+    const userId = request.session.userId;
+    if (!userId) {
+      return reply.status(401).send({ error: "Not authenticated" });
+    }
+
+    const parsedParams = GetProjectApiKeyParams.safeParse(request.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({ error: parsedParams.error.issues[0]?.message ?? "Invalid params" });
+    }
+    const { projectId } = parsedParams.data;
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId },
+    });
+
+    if (!project) {
+      return reply.status(404).send({ error: "Project not found" });
+    }
+
+    // Cascading delete in correct FK order within a transaction
+    await prisma.$transaction(async (tx) => {
+      // 1. MemoryEmbedding (depends on Memory)
+      await tx.memoryEmbedding.deleteMany({
+        where: { memory: { projectId } },
+      });
+
+      // 2. EntityMention (depends on Memory + Entity)
+      await tx.entityMention.deleteMany({
+        where: {
+          OR: [
+            { memory: { projectId } },
+            { entity: { projectId } },
+          ],
+        },
+      });
+
+      // 3. Relation (depends on Entity + Memory)
+      await tx.relation.deleteMany({ where: { projectId } });
+
+      // 4. Memory (depends on Message via sourceMessageId, nullable)
+      await tx.memory.deleteMany({ where: { projectId } });
+
+      // 5. Entity
+      await tx.entity.deleteMany({ where: { projectId } });
+
+      // 6. Message
+      await tx.message.deleteMany({ where: { projectId } });
+
+      // 7. Project
+      await tx.project.delete({ where: { id: projectId } });
+    });
+
+    return reply.status(204).send();
+  });
+
   // GET /v1/projects/:projectId/api-key — retrieve API key for a project (requires session + ownership)
   fastify.get("/v1/projects/:projectId/api-key", async (request, reply) => {
     const userId = request.session.userId;
