@@ -2,8 +2,9 @@ import { useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { FolderOpenIcon, CalendarIcon, ArrowRightIcon, CpuIcon } from "lucide-react";
-import { getProjects, createProject, updateProject, getProviderAvailability, ApiError } from "../lib/api";
+import { FolderOpenIcon, CalendarIcon, ArrowRightIcon, CpuIcon, Trash2Icon } from "lucide-react";
+import { getProjects, createProject, updateProject, deleteProject, getProviderAvailability, ApiError } from "../lib/api";
+import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,6 +50,7 @@ export function ProjectsPage() {
   const [provider, setProvider] = useState<Provider>("openai");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [confirmDeleteProject, setConfirmDeleteProject] = useState<{ id: string; name: string } | null>(null);
 
   const { configured, isLoaded: providersLoaded } = useConfiguredProviders();
 
@@ -89,6 +91,24 @@ export function ProjectsPage() {
         toast.error(body?.error ?? "Failed to update provider");
       } else {
         toast.error("Failed to update provider");
+      }
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (projectId: string) => deleteProject(projectId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      setConfirmDeleteProject(null);
+      toast.success("Project deleted");
+    },
+    onError: (err) => {
+      setConfirmDeleteProject(null);
+      if (err instanceof ApiError) {
+        const body = err.body as { error?: string };
+        toast.error(body?.error ?? "Failed to delete project");
+      } else {
+        toast.error("Failed to delete project");
       }
     },
   });
@@ -274,6 +294,13 @@ export function ProjectsPage() {
                           </SelectContent>
                         </Select>
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteProject({ id: p.id, name: p.name }); }}
+                        className="flex items-center justify-center size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      >
+                        <Trash2Icon className="size-4" />
+                      </button>
                       <Link
                         to="/projects/$projectId/workbench"
                         params={{ projectId: p.id }}
@@ -289,6 +316,18 @@ export function ProjectsPage() {
           );
         })}
       </ul>
+
+      <ConfirmationDialog
+        open={!!confirmDeleteProject}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteProject(null); }}
+        title="Delete project"
+        description="This will permanently delete the project and all its data including messages, memories, entities, and relations. This action cannot be undone."
+        confirmLabel={deleteMutation.isPending ? "Deleting…" : "Delete project"}
+        variant="danger"
+        warning="All project data will be permanently lost."
+        confirmations={confirmDeleteProject ? [{ label: "project name", value: confirmDeleteProject.name }] : []}
+        onConfirm={() => { if (confirmDeleteProject) deleteMutation.mutate(confirmDeleteProject.id); }}
+      />
     </div>
   );
 }

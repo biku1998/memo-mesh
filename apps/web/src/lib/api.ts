@@ -25,6 +25,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(res.status, body);
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json() as Promise<T>;
 }
 
@@ -89,6 +93,10 @@ export function updateProject(projectId: string, provider: "openai" | "anthropic
     method: "PATCH",
     body: JSON.stringify({ provider }),
   });
+}
+
+export function deleteProject(projectId: string) {
+  return request<void>(`/v1/projects/${projectId}`, { method: "DELETE" });
 }
 
 export function getProjectApiKey(projectId: string) {
